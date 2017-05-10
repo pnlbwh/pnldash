@@ -5,30 +5,29 @@ import yaml
 import os.path
 
 
+PROJECTS_DB = local.path('_data')
 PARAM_HDR = ['projectName', 'projectPath', 'description', 'paramId',
                    'param', 'paramValue']
 PATH_HDR = ['projectName', 'projectPath', 'paramId', 'pathKey',
                     'caseid', 'path', 'exists']
-
-def csvFromDict(d):
-    s = ""
-    hdr = 'projectName,projectPath,grantId,paramId,caselist,param,paramValue'
-    row = ','.join(d.values())
-    return hdr + '\n' + row
 
 def readFileLines(fn):
     with open(fn, 'r') as f:
         return f.read().splitlines()
 
 class App(cli.Application):
+
+    outdir = cli.SwitchAttr(['-o'], cli.ExistingDirectory, mandatory=False, default=local.cwd)
+
     def main(self, ymlfile):
+        ymlfile = local.path(ymlfile)
         with open(ymlfile, 'r') as f:
             yml = yaml.load(f)
 
-        name = yml['projectInfo']['projectName']
         projectInfo = yml['projectInfo']
-        paramsCsv = '{}_params.csv'.format(name)
-        pathsCsv = '{}_paths.csv'.format(name)
+
+        paramsCsv = self.outdir / '{}--params.csv'.format(ymlfile.stem)
+        pathsCsv = self.outdir / '{}--paths.csv'.format(ymlfile.stem)
 
         with open(paramsCsv, 'w') as fparamsCsv:
             csvwriterParams = csv.writer(fparamsCsv)

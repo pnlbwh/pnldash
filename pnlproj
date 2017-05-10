@@ -1,11 +1,11 @@
 #!/usr/bin/env python
-from plumbum import cli, local
+from plumbum import cli, local, FG
 import csv
 import yaml
 from collections import OrderedDict
 
-PUBLISH_CONFIG_FILE = 'publish.yml'
-PNLPROJECTSMETA = 'PNLPROJECTSMETA'
+PROJECT_FILE = 'project.yml'
+PNL_PROJECTS_DB = 'PNL_PROJECTS_DB'
 
 TEMPLATE="""\
 projectInfo:
@@ -21,7 +21,7 @@ pipelines:
         hash_BRAINSTools: 41353e8
         hash_trainingDataT1AHCC: d6e5990
       paths:
-        fs: _data/003_GNX_007/std_fs0.mgz
+        fs: _data/003_GNX_007/freesurfer
         dwied: _data/003_GNX_007/std_dwied0.nrrd
         dwimask: _data/003_GNX_007/std_dwimask0.nrrd
         t1mask: _data/003_GNX_007/std_t1mask0.nrrd
@@ -38,15 +38,8 @@ pipelines:
 """.format(local.cwd.name.__str__(), local.cwd.__str__())
 
 
-def csvFromDict(d):
-    s = ""
-    hdr = 'projectName,projectPath,grantId,paramId,caselist,param,paramValue'
-    row = ','.join(d.values())
-    return hdr + '\n' + row
-
-
 def readProjectInfo():
-    with open(PUBLISH_CONFIG_FILE, 'r') as f:
+    with open(PROJECT_FILE, 'r') as f:
         return yaml.load(f)
 
 
@@ -99,48 +92,88 @@ class Init(cli.Application):
         represent_dict_order = lambda self, data: self.represent_mapping('tag:yaml.org,2002:map', data.items())
         yaml.add_representer(OrderedDict, represent_dict_order)
 
-        with open(PUBLISH_CONFIG_FILE, 'w') as f:
+        with open(PROJECT_FILE, 'w') as f:
             f.write(TEMPLATE)
-        print("Made '{}'".format(PUBLISH_CONFIG_FILE))
+        print("Made '{}'".format(PROJECT_FILE))
 
+def readFullName():
+    with open('project.yml', 'r') as f:
+            yml = yaml.load(f)
+    name = yml['projectInfo']['projectName']
+    return yml['projectInfo']['projectPath'].replace('/','-')[1:] + '--' + name + '.yml'
 
 @Publish.subcommand("push")
 class Push(cli.Application):
+    """Copies yml to central project database"""
     def main(self):
         import os
-        centralRepo = os.environ.get(PNLPROJECTSMETA, None)
+        from plumbum.cmd import scp
+        centralRepo = os.environ.get(PNL_PROJECTS_DB, None)
         if not centralRepo:
             errmsg = "Set '{}' environment variable first.".format(
-                PNLPROJECTSMETA)
+                PNL_PROJECTS_DB)
             raise Exception(errmsg)
 
-        centralRepo = local.path(centralRepo)
-        paramsCsv = local.path('_{}_publish_params.csv'.format(
-            self.parent.parent.name))
-        pathsCsv = local.path('_{}_publish_paths.csv'.format(
-            self.parent.parent.name))
+        destName = centralRepo + '/' + readFullName()
+        scp['project.yml', destName] & FG
 
-        if not paramsCsv.exists():
-            errmsg = "'{}' does not exist, run 'publish' command first".format(
-                paramsCsv)
-            raise Exception(errmsg)
-        if not pathsCsv.exists():
-            errmsg = "'{}' does not exist, run 'publish' command first".format(
-                pathsCsv)
-            raise Exception(errmsg)
+        print("Successfully copied '{}' to '{}'".format('project.yml'
+                                                        ,centralRepo + '/' + destName))
 
-        dest = centralRepo / readProjectInfo()['projectName']
 
-        # if dest.exists():
-        #     errmsg = "Destination direction '{}' already exists, so you must choose a different project name (change it in '{}')".format(dest, PUBLISH_CONFIG_FILE)
-        #     raise Exception(errmsg)
+@Publish.subcommand("tocsv")
+class ToCsv(cli.Application):
+    """Expands project yml file to csvs"""
+    def main(self):
+        import os
+        with open(PROJECT_FILE, 'r') as f:
+            yml = yaml.load(f)
 
-        dest.mkdir()
-        pathsCsv.copy(dest)
-        paramsCsv.copy(dest)
+        PARAM_HDR = ['projectName', 'projectPath', 'description', 'paramId',
+                    'param', 'paramValue']
+        PATH_HDR = ['projectName', 'projectPath', 'paramId', 'pathKey',
+                    'caseid', 'path', 'exists']
 
-        print("Successfully published '{}' to '{}'".format(pathsCsv, dest))
-        print("Successfully published '{}' to '{}'".format(paramsCsv, dest))
+        def readFileLines(fn):
+            with open(fn, 'r') as f:
+                return f.read().splitlines()
+
+        projectInfo = yml['projectInfo']
+        name = projectInfo['projectName']
+        fullName = projectInfo['projectPath'].replace('/','-')[1:] + '--' + name
+        paramsCsv = '{}--params.csv'.format(fullName)
+        pathsCsv = '{}--paths.csv'.format(fullName)
+
+        with open(paramsCsv, 'w') as fparamsCsv:
+            csvwriterParams = csv.writer(fparamsCsv)
+            csvwriterParams.writerow(PARAM_HDR)
+            with open(pathsCsv, 'w') as fpathsCsv:
+                csvwriterPaths = csv.writer(fpathsCsv)
+                csvwriterPaths.writerow(PATH_HDR)
+
+                for paramId, pipeline in enumerate(yml['pipelines']):
+                    for param, paramVal in pipeline['parameters'].items():
+                        csvwriterParams.writerow([projectInfo['projectName'],
+                                            projectInfo['projectPath'],
+                                            projectInfo['grantId'],
+                                            projectInfo['description'],
+                                            paramId, param, paramVal])
+                    caseids = readFileLines(pipeline['paths']['caselist'])
+                    caseidString = pipeline['paths']['caseid']
+                    for pathKey, pathTemplate in pipeline['paths'].items():
+                        if pathKey == 'caselist' or pathKey == 'caseid':
+                            continue
+                        for caseid in caseids:
+                            path = pathTemplate.replace(caseidString, caseid)
+                            csvwriterPaths.writerow(
+                                [projectInfo['projectName'],
+                                projectInfo['projectPath'],
+                                paramId,
+                                pathKey, caseid, path,
+                                os.path.exists(path)])
+            print("Made '{}'".format(paramsCsv))
+            print("Made '{}'".format(pathsCsv))
+
 
 if __name__ == '__main__':
     Publish.run()
