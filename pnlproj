@@ -21,12 +21,12 @@ pipelines:
         hash_BRAINSTools: 41353e8
         hash_trainingDataT1AHCC: d6e5990
       paths:
-        fs: _data/003_GNX_007/freesurfer
+        fs: _data/003_GNX_007/freesurfer/
         dwied: _data/003_GNX_007/std_dwied0.nrrd
         dwimask: _data/003_GNX_007/std_dwimask0.nrrd
         t1mask: _data/003_GNX_007/std_t1mask0.nrrd
         t1: _data/003_GNX_007/std_t10.nrrd
-        wmql: _data/003_GNX_007/std_wmql0.vtk
+        wmql: _data/003_GNX_007/wmql/
         tractmeasures: _data/003_GNX_007/std_tractmeasures0.csv
         dwixc: _data/003_GNX_007/std_dwixc0.nrrd
         ukf: _data/003_GNX_007/std_ukf0.vtk
@@ -97,10 +97,11 @@ class Init(cli.Application):
         print("Made '{}'".format(PROJECT_FILE))
 
 def readFullName():
-    with open('project.yml', 'r') as f:
-            yml = yaml.load(f)
-    name = yml['projectInfo']['projectName']
-    return yml['projectInfo']['projectPath'].replace('/','-')[1:] + '--' + name + '.yml'
+    # with open('project.yml', 'r') as f:
+    #         yml = yaml.load(f)
+    # name = yml['projectInfo']['projectName']
+    # return yml['projectInfo']['projectPath'].replace('/','-')[1:] + '--' + name + '.yml'
+    return local.cwd.__str__().replace('/','-')[1:] + '.yml'
 
 @Publish.subcommand("push")
 class Push(cli.Application):
