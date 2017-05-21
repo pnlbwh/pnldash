@@ -3,13 +3,15 @@ from plumbum import cli, local
 import csv
 import yaml
 import os.path
+import glob
+import time
 
 
 PROJECTS_DB = local.path('_data')
 PARAM_HDR = ['projectName', 'projectPath', 'description', 'paramId',
                    'param', 'paramValue']
 PATH_HDR = ['projectName', 'projectPath', 'paramId', 'pathKey',
-                    'caseid', 'path', 'exists']
+                    'caseid', 'path', 'exists', 'modtime', 'modtimeStr']
 
 def readFileLines(fn):
     with open(fn, 'r') as f:
@@ -17,7 +19,7 @@ def readFileLines(fn):
 
 class App(cli.Application):
 
-    outdir = cli.SwitchAttr(['-o'], cli.ExistingDirectory, mandatory=False, default=local.cwd)
+    outdir = cli.SwitchAttr(['-o'], cli.ExistingDirectory, mandatory=False, help="Output directory", default=local.cwd)
 
     def main(self, ymlfile):
         ymlfile = local.path(ymlfile)
@@ -50,12 +52,26 @@ class App(cli.Application):
                             continue
                         for caseid in caseids:
                             path = pathTemplate.replace(caseidString, caseid)
-                            csvwriterPaths.writerow(
-                                [projectInfo['projectName'],
-                                 projectInfo['projectPath'],
-                                 paramId,
-                                 pathKey, caseid, path,
-                                 os.path.exists(path)])
+                            paths = glob.glob(path) # could be a glob pattern
+                            if not paths: # no glob
+                                paths = [path]
+                            for path in paths:
+                                mtime = None
+                                mtimeStr = None
+                                exists = False
+                                if os.path.exists(path):
+                                    mtime = os.path.getmtime(path)
+                                    mtimeStr = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(mtime))
+                                    exists = True
+                                csvwriterPaths.writerow(
+                                    [projectInfo['projectName'],
+                                     projectInfo['projectPath'],
+                                     paramId,
+                                     pathKey, caseid, path,
+                                     exists,
+                                     mtime,
+                                     mtimeStr
+                                    ])
             print("Made '{}'".format(paramsCsv))
             print("Made '{}'".format(pathsCsv))
 
