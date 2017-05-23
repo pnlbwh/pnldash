@@ -3,14 +3,14 @@ from plumbum import cli, local, FG
 import csv
 import yaml
 from collections import OrderedDict
+import sys
 
-PROJECT_FILE = 'project.yml'
+PROJECT_YML = 'project.yml'
 PNL_PROJECTS_DB = 'PNL_PROJECTS_DB'
 
 TEMPLATE="""\
 projectInfo:
     projectName: {}
-    projectPath: {}
     grantId:
     description:
 pipelines:
@@ -39,7 +39,7 @@ pipelines:
 
 
 def readProjectInfo():
-    with open(PROJECT_FILE, 'r') as f:
+    with open(PROJECT_YML, 'r') as f:
         return yaml.load(f)
 
 
@@ -51,129 +51,45 @@ class Publish(cli.Application):
         if self.nested_command:
             return
 
-        readAndSetSrcPaths()
-        combos = readComboPaths(self.parent.paramsFile)
-        projectInfo = readProjectInfo()
-
-        paramsCsv = '_{}_publish_params.csv'.format(self.parent.name)
-        pathsCsv = '_{}_publish_paths.csv'.format(self.parent.name)
-
-        with open(paramsCsv, 'w') as fparamsCsv:
-            csvwriter = csv.writer(fparamsCsv)
-            hdr = ['projectName', 'projectPath', 'description', 'paramId',
-                   'param', 'paramValue']
-            csvwriter.writerow(hdr)
-            with open(pathsCsv, 'w') as fpathsCsv:
-                hdr = ['projectName', 'projectPath', 'paramId', 'pathKey',
-                       'caseid', 'path', 'exists']
-                csvwriter2 = csv.writer(fpathsCsv)
-                csvwriter2.writerow(hdr)
-
-                for combo in combos:
-                    for k, v in combo['paramCombo'].items():
-                        csvwriter.writerow([projectInfo['projectName'],
-                                            projectInfo['projectPath'],
-                                            projectInfo['description'],
-                                            combo['paramId'], k, v])
-                    for pathKey, subjectPaths in combo['paths'].items():
-                        for subjectPath in subjectPaths:
-                            csvwriter2.writerow(
-                                [projectInfo['projectName'],
-                                 projectInfo['projectPath'], combo['paramId'],
-                                 pathKey, subjectPath.caseid, subjectPath.path,
-                                 subjectPath.path.exists()])
-            print("Made '{}'".format(paramsCsv))
-            print("Made '{}'".format(pathsCsv))
-
 
 @Publish.subcommand("init")
 class Init(cli.Application):
     def main(self):
+        if local.path(PROJECT_YML).exists():
+            msg = "'{}' already exists, to recreate it delete it first.".format(PROJECT_YML)
+            print(msg)
+            sys.exit(1)
+
         represent_dict_order = lambda self, data: self.represent_mapping('tag:yaml.org,2002:map', data.items())
         yaml.add_representer(OrderedDict, represent_dict_order)
 
-        with open(PROJECT_FILE, 'w') as f:
+        with open(PROJECT_YML, 'w') as f:
             f.write(TEMPLATE)
-        print("Made '{}'".format(PROJECT_FILE))
+        print("Made template '{}'".format(PROJECT_YML))
 
-def readFullName():
-    # with open('project.yml', 'r') as f:
-    #         yml = yaml.load(f)
-    # name = yml['projectInfo']['projectName']
-    # return yml['projectInfo']['projectPath'].replace('/','-')[1:] + '--' + name + '.yml'
-    return local.cwd.__str__().replace('/','-')[1:] + '.yml'
 
 @Publish.subcommand("push")
 class Push(cli.Application):
-    """Copies yml to central project database"""
+    """Copies project.yml to central project database"""
+    def readFullName(self):
+        return local.cwd.__str__().replace('/','-')[1:] + '.yml'
+
     def main(self):
         import os
         from plumbum.cmd import scp
+
         centralRepo = os.environ.get(PNL_PROJECTS_DB, None)
+
         if not centralRepo:
             errmsg = "Set '{}' environment variable first.".format(
                 PNL_PROJECTS_DB)
             raise Exception(errmsg)
 
-        destName = centralRepo + '/' + readFullName()
+        destName = centralRepo + '/' + self.readFullName()
+
+        print("Copy project.yml to '{}'".format(destName))
         scp['project.yml', destName] & FG
-
-        print("Successfully copied '{}' to '{}'".format('project.yml'
-                                                        ,centralRepo + '/' + destName))
-
-
-@Publish.subcommand("tocsv")
-class ToCsv(cli.Application):
-    """Expands project yml file to csvs"""
-    def main(self):
-        import os
-        with open(PROJECT_FILE, 'r') as f:
-            yml = yaml.load(f)
-
-        PARAM_HDR = ['projectName', 'projectPath', 'description', 'paramId',
-                    'param', 'paramValue']
-        PATH_HDR = ['projectName', 'projectPath', 'paramId', 'pathKey',
-                    'caseid', 'path', 'exists']
-
-        def readFileLines(fn):
-            with open(fn, 'r') as f:
-                return f.read().splitlines()
-
-        projectInfo = yml['projectInfo']
-        name = projectInfo['projectName']
-        fullName = projectInfo['projectPath'].replace('/','-')[1:] + '--' + name
-        paramsCsv = '{}--params.csv'.format(fullName)
-        pathsCsv = '{}--paths.csv'.format(fullName)
-
-        with open(paramsCsv, 'w') as fparamsCsv:
-            csvwriterParams = csv.writer(fparamsCsv)
-            csvwriterParams.writerow(PARAM_HDR)
-            with open(pathsCsv, 'w') as fpathsCsv:
-                csvwriterPaths = csv.writer(fpathsCsv)
-                csvwriterPaths.writerow(PATH_HDR)
-
-                for paramId, pipeline in enumerate(yml['pipelines']):
-                    for param, paramVal in pipeline['parameters'].items():
-                        csvwriterParams.writerow([projectInfo['projectName'],
-                                            projectInfo['projectPath'],
-                                            projectInfo['grantId'],
-                                            projectInfo['description'],
-                                            paramId, param, paramVal])
-                    caseids = readFileLines(pipeline['paths']['caselist'])
-                    caseidString = pipeline['paths']['caseid']
-                    for pathKey, pathTemplate in pipeline['paths'].items():
-                        if pathKey == 'caselist' or pathKey == 'caseid':
-                            continue
-                        for caseid in caseids:
-                            path = pathTemplate.replace(caseidString, caseid)
-                            csvwriterPaths.writerow(
-                                [projectInfo['projectName'],
-                                projectInfo['projectPath'],
-                                paramId,
-                                pathKey, caseid, path,
-                                os.path.exists(path)])
-            print("Made '{}'".format(paramsCsv))
-            print("Made '{}'".format(pathsCsv))
+        print("Successfully copied '{}' to '{}'".format('project.yml', destName))
 
 
 if __name__ == '__main__':

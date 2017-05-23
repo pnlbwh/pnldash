@@ -13,9 +13,14 @@ PARAM_HDR = ['projectName', 'projectPath', 'description', 'paramId',
 PATH_HDR = ['projectName', 'projectPath', 'paramId', 'pathKey',
                     'caseid', 'path', 'exists', 'modtime', 'modtimeStr']
 
-def readFileLines(fn):
-    with open(fn, 'r') as f:
-        return f.read().splitlines()
+def readCaselist(fn):
+    if isinstance(fn, str):
+        with open(fn, 'r') as f:
+            return f.read().splitlines()
+    elif isinstance(fn, list):
+        return fn
+    else:
+        raise Exception("caselist field must be string or list type")
 
 class App(cli.Application):
 
@@ -27,6 +32,7 @@ class App(cli.Application):
             yml = yaml.load(f)
 
         projectInfo = yml['projectInfo']
+        projectPath = ymlfile.stem.replace('-', '/')
 
         paramsCsv = self.outdir / '{}--params.csv'.format(ymlfile.stem)
         pathsCsv = self.outdir / '{}--paths.csv'.format(ymlfile.stem)
@@ -41,11 +47,11 @@ class App(cli.Application):
                 for paramId, pipeline in enumerate(yml['pipelines']):
                     for param, paramVal in pipeline['parameters'].items():
                         csvwriterParams.writerow([projectInfo['projectName'],
-                                            projectInfo['projectPath'],
-                                            projectInfo['grantId'],
-                                            projectInfo['description'],
-                                            paramId, param, paramVal])
-                    caseids = readFileLines(pipeline['paths']['caselist'])
+                                                  projectPath,
+                                                  projectInfo['grantId'],
+                                                  projectInfo['description'],
+                                                  paramId, param, paramVal])
+                    caseids = readCaselist(pipeline['paths']['caselist'])
                     caseidString = pipeline['paths']['caseid']
                     for pathKey, pathTemplate in pipeline['paths'].items():
                         if pathKey == 'caselist' or pathKey == 'caseid':
@@ -65,7 +71,7 @@ class App(cli.Application):
                                     exists = True
                                 csvwriterPaths.writerow(
                                     [projectInfo['projectName'],
-                                     projectInfo['projectPath'],
+                                     projectPath,
                                      paramId,
                                      pathKey, caseid, path,
                                      exists,
