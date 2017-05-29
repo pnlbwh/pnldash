@@ -41,7 +41,7 @@ class Csvs(cli.Application):
     @cli.positional(cli.ExistingFile)
     def main(self, projectyml):
         with open(projectyml, 'r') as f:
-            yml = yaml.load(f) # TODO force read each field as a string
+            yml = yaml.load(f, Loader=yaml.loader.BaseLoader) # TODO force read each field as a string
 
         projectInfo = yml['projectInfo']
         projectPath = projectyml.stem.replace('-', '/')
@@ -67,7 +67,7 @@ class Csvs(cli.Application):
                              paramVal])
                     caseids = readCaselist(pipeline['paths']['caselist'])
                     caseidString = pipeline['paths']['caseid']
-                    if not isinstance(caseidString, str):
+                    if not isinstance(caseidString, unicode):
                         raise Exception("caseid field needs to be in quotes to protect its value: TODO force read yml fields as strings")
                     for pathKey, pathTemplate in pipeline['paths'].items():
                         if pathKey == 'caselist' or pathKey == 'caseid':
