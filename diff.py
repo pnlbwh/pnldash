@@ -5,7 +5,7 @@ import sys
 import pandas as pd
 
 
-class App(cli.Application):
+class Diff(cli.Application):
 
     out = cli.SwitchAttr(
         ['-o'],
@@ -13,6 +13,8 @@ class App(cli.Application):
 
     def main(self, csv, txt):
         paths = pd.read_csv(csv)
+        if paths.empty:
+            raise Exception("'{}' is empty".format(csv))
         existing_paths = paths[paths.exists]['path']
         with open(txt, 'r') as f:
             found_paths = f.read().splitlines()
@@ -23,9 +25,10 @@ class App(cli.Application):
                 for path in unaccounted_files:
                     sys.stderr.write(path + '\n')
                     f.write(path + '\n')
+            print("{} unaccounted file(s) found.".format(len(unaccounted_files)))
         else:
             sys.stderr.write("No unaccounted files found\n")
 
 
 if __name__ == '__main__':
-    App.run()
+    Diff.run()

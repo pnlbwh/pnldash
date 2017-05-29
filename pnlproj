@@ -4,11 +4,16 @@ import csv
 import yaml
 from collections import OrderedDict
 import sys
+from os.path import getmtime
 
-PROJECT_YML = 'project.yml'
+PROJECT_YML = local.path('project.yml')
 PNL_PROJECTS_DB = 'PNL_PROJECTS_DB'
+CACHE_DIR = local.path("_pnlproj")
+PATHS_CSV = local.path(CACHE_DIR / "paths.csv")
+CRAWLED_TXT = local.path(CACHE_DIR / "crawledPaths.txt")
+DIFF_TXT = local.path(CACHE_DIR / "diffPaths.txt")
 
-TEMPLATE="""\
+TEMPLATE = """\
 projectInfo:
     projectName: {}
     grantId:
@@ -39,12 +44,7 @@ pipelines:
 """.format(local.cwd.name.__str__())
 
 
-def readProjectInfo():
-    with open(PROJECT_YML, 'r') as f:
-        return yaml.load(f)
-
-
-class Publish(cli.Application):
+class App(cli.Application):
     def main(self, *args):
         if args:
             print("Unknown command {0!r}".format(args[0]))
@@ -53,12 +53,14 @@ class Publish(cli.Application):
             return
 
 
-@Publish.subcommand("init")
+@App.subcommand("init")
 class Init(cli.Application):
     """Makes template 'project.yml'"""
+
     def main(self):
         if local.path(PROJECT_YML).exists():
-            msg = "'{}' already exists, to recreate it delete it first.".format(PROJECT_YML)
+            msg = "'{}' already exists, to recreate it delete it first.".format(
+                PROJECT_YML)
             print(msg)
             sys.exit(1)
 
@@ -68,14 +70,14 @@ class Init(cli.Application):
         with open(PROJECT_YML, 'w') as f:
             f.write(TEMPLATE)
         print("Made template '{}'.".format(PROJECT_YML))
-        print("Now edit it and run 'pnlpublish push'")
 
 
-@Publish.subcommand("push")
-class Push(cli.Application):
+@App.subcommand("publish")
+class Publish(cli.Application):
     """Copies project.yml to central project database"""
+
     def readFullName(self):
-        return local.cwd.__str__().replace('/','-')[1:] + '.yml'
+        return local.cwd.__str__().replace('/', '-')[1:] + '.yml'
 
     def main(self):
         import os
@@ -92,8 +94,65 @@ class Push(cli.Application):
 
         print("Copy project.yml to '{}'".format(destName))
         scp['project.yml', destName] & FG
-        print("Successfully copied '{}' to '{}'".format('project.yml', destName))
+        print("Successfully copied '{}' to '{}'".format('project.yml',
+                                                        destName))
+
+
+import csvs
+
+
+@App.subcommand("csvs")
+class Csvs(csvs.Csvs):
+    outdir = CACHE_DIR
+
+    def main(self):
+        if not PATHS_CSV.exists() or (getmtime(PROJECT_YML) > getmtime(PATHS_CSV)):
+            csvs.Csvs.main(self, PROJECT_YML)
+        else:
+            print(
+                "'{}' is newer than '{}', so not regenerating.".format(
+                    PATHS_CSV, PROJECT_YML))
+
+
+import crawl
+crawl.Crawl.out = CRAWLED_TXT
+@App.subcommand("crawl")
+class Crawl(crawl.Crawl):
+    outdir = CACHE_DIR
+
+    def main(self):
+        crawl.Crawl.main(self, PROJECT_YML.dirname)
+
+
+import diff
+@App.subcommand("diff")
+class Diff(diff.Diff):
+    out = DIFF_TXT
+
+    def main(self):
+
+        # remove "diff" from argv so that we can call 'csvs' and 'crawl' without error
+        sys.argv = sys.argv[:-1]
+
+        try:
+            Csvs.run()
+        except:
+            pass
+
+        try:
+            if not CRAWLED_TXT.exists():
+                Crawl.run()
+            else:
+                print("'{}' already exists, using that to find unaccounted files (run 'pnlproj crawl' to update it).".format(CRAWLED_TXT))
+
+        except:
+            pass
+
+        diff.Diff.main(self, CACHE_DIR / "paths.csv", CACHE_DIR /
+                       "crawledPaths.txt")
 
 
 if __name__ == '__main__':
-    Publish.run()
+    CACHE_DIR.mkdir()
+
+    App.run()
