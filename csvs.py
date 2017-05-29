@@ -11,13 +11,20 @@ PARAM_HDR = ['projectName', 'projectPath', 'description', 'paramId', 'param',
 PATH_HDR = ['projectName', 'projectPath', 'paramId', 'pathKey', 'caseid',
             'path', 'exists', 'modtime', 'modtimeStr']
 
+def concat(l):
+    return l if l == [] else [item for sublist in l for item in sublist]
 
-def readCaselist(fn):
-    if isinstance(fn, str):
-        with open(fn, 'r') as f:
-            return f.read().splitlines()
-    elif isinstance(fn, list):
-        return fn
+def readCaselistItem(s):
+    if '/' in s:
+        with open(s, 'r') as f:
+            return [line.split()[0] for line in f.read().splitlines()]
+    return [s]
+
+def readCaselist(caselist):
+    if isinstance(caselist, str):
+        return readCaselistItem(caselist)
+    elif isinstance(caselist, list):
+        return concat(map(readCaselistItem, caselist))
     else:
         raise Exception("caselist field must be string or list type")
 
