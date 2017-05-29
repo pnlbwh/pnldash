@@ -9,6 +9,9 @@ EXTS = ['.nrrd', '.nii.gz', '.nii', '.vtk', '.nhdr', '.mgz']
 def fileFilter(p):
     return any(ext in ''.join(p.suffixes) for ext in EXTS) and not p.islink()
 
+def dirFilter(d):
+    return not (d / 'project.yml').exists()
+
 
 class Crawl(cli.Application):
 
@@ -16,7 +19,7 @@ class Crawl(cli.Application):
 
     def main(self, rootPath):
         # TODO don't traverse directories with project.yml in them
-        paths = local.path(rootPath).walk(fileFilter)
+        paths = local.path(rootPath).walk(fileFilter, dirFilter)
         num = 0
         if self.out:
             with open(self.out, 'w') as f:
