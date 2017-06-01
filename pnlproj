@@ -10,8 +10,10 @@ PROJECT_YML = local.path('project.yml')
 PNL_PROJECTS_DB = 'PNL_PROJECTS_DB'
 CACHE_DIR = local.path("_pnlproj")
 PATHS_CSV = local.path(CACHE_DIR / "paths.csv")
-CRAWLED_TXT = local.path(CACHE_DIR / "crawledPaths.txt")
+PARAMS_CSV = local.path(CACHE_DIR / "params.csv")
+FIND_TXT = local.path(CACHE_DIR / "findPaths.txt")
 DIFF_TXT = local.path(CACHE_DIR / "diffPaths.txt")
+FIND_EXTS = ['.nrrd', '.nii.gz', '.nii', '.vtk', '.nhdr', '.mgz']
 
 TEMPLATE = """\
 projectInfo:
@@ -45,6 +47,7 @@ pipelines:
 
 
 class App(cli.Application):
+
     def main(self, *args):
         if args:
             print("Unknown command {0!r}".format(args[0]))
@@ -57,10 +60,11 @@ class App(cli.Application):
 class Init(cli.Application):
     """Makes template 'project.yml'"""
 
+    force = cli.Flag(['-f', '--force'], default=False, help='force overwrite')
+
     def main(self):
-        if local.path(PROJECT_YML).exists():
-            msg = "'{}' already exists, to recreate it delete it first.".format(
-                PROJECT_YML)
+        if local.path(PROJECT_YML).exists() and not self.force:
+            msg = "'{}' already exists, to recreate it delete it first or use --force flag.".format(PROJECT_YML)
             print(msg)
             sys.exit(1)
 
@@ -72,8 +76,8 @@ class Init(cli.Application):
         print("Made template '{}'.".format(PROJECT_YML))
 
 
-@App.subcommand("publish")
-class Publish(cli.Application):
+@App.subcommand("push")
+class Push(cli.Application):
     """Copies project.yml to central project database"""
 
     def readFullName(self):
@@ -90,12 +94,13 @@ class Publish(cli.Application):
                 PNL_PROJECTS_DB)
             raise Exception(errmsg)
 
-        destName = centralRepo + '/' + self.readFullName()
+        destDir = local.path(centralRepo) / local.cwd.__str__().replace('/', '-')[1:]
+        destDir.mkdir()
 
-        print("Copy project.yml to '{}'".format(destName))
-        scp['project.yml', destName] & FG
-        print("Successfully copied '{}' to '{}'".format('project.yml',
-                                                        destName))
+        files = ['project.yml', PATHS_CSV, PARAMS_CSV, DIFF_TXT]
+        for file in files:
+            scp[file, destDir] & FG
+            print("Copied '{}' to '{}'".format(file, destDir))
 
 
 import csvs
@@ -105,8 +110,11 @@ import csvs
 class Csvs(csvs.Csvs):
     outdir = CACHE_DIR
 
+    useCache = cli.Flag(['-c', '--cache'], default=False, mandatory=False, help="Use cached results \
+to avoid recomputing paths.csv")
+
     def main(self):
-        if not PATHS_CSV.exists() or (getmtime(PROJECT_YML) > getmtime(PATHS_CSV)):
+        if not self.useCache or not PATHS_CSV.exists() or (getmtime(PROJECT_YML) > getmtime(PATHS_CSV)):
             csvs.Csvs.main(self, PROJECT_YML)
         else:
             print(
@@ -114,14 +122,16 @@ class Csvs(csvs.Csvs):
                     PATHS_CSV, PROJECT_YML))
 
 
-import crawl
-crawl.Crawl.out = CRAWLED_TXT
-@App.subcommand("crawl")
-class Crawl(crawl.Crawl):
+import find
+find.Find.out = FIND_TXT
+@App.subcommand("find")
+class Find(find.Find):
+    """Finds image files in project directory."""
+
     outdir = CACHE_DIR
 
     def main(self):
-        crawl.Crawl.main(self, PROJECT_YML.dirname)
+        find.Find.main(self, PROJECT_YML.dirname)
 
 
 import diff
@@ -131,25 +141,17 @@ class Diff(diff.Diff):
 
     def main(self):
 
-        # remove "diff" from argv so that we can call 'csvs' and 'crawl' without error
+        # remove "diff" from argv so that we can call 'csvs' and 'find' without error
         sys.argv = sys.argv[:-1]
 
-        try:
-            Csvs.run()
-        except:
-            pass
+        Csvs.run(exit=False)
 
-        try:
-            if not CRAWLED_TXT.exists():
-                Crawl.run()
-            else:
-                print("'{}' already exists, using that to find unaccounted files (run 'pnlproj crawl' to update it).".format(CRAWLED_TXT))
+        if not FIND_TXT.exists():
+            Find.run(exit=False)
+        else:
+            print("'{}' already exists, using that to find unaccounted files (run 'pnlproj find' to update it).".format(FIND_TXT))
 
-        except:
-            pass
-
-        diff.Diff.main(self, CACHE_DIR / "paths.csv", CACHE_DIR /
-                       "crawledPaths.txt")
+        diff.Diff.main(self, PATHS_CSV, FIND_TXT)
 
 
 if __name__ == '__main__':

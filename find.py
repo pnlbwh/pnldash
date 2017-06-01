@@ -13,7 +13,7 @@ def dirFilter(d):
     return not (d / 'project.yml').exists()
 
 
-class Crawl(cli.Application):
+class Find(cli.Application):
 
     out = cli.SwitchAttr(['-o'], mandatory=False, help='Output file')
 
@@ -36,4 +36,4 @@ class Crawl(cli.Application):
 
 
 if __name__ == '__main__':
-    Crawl.run()
+    Find.run()

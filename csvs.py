@@ -21,7 +21,7 @@ def readCaselistItem(s):
     return [s]
 
 def readCaselist(caselist):
-    if isinstance(caselist, str):
+    if isinstance(caselist, unicode):
         return readCaselistItem(caselist)
     elif isinstance(caselist, list):
         return concat(map(readCaselistItem, caselist))
@@ -44,7 +44,7 @@ class Csvs(cli.Application):
             yml = yaml.load(f, Loader=yaml.loader.BaseLoader) # TODO force read each field as a string
 
         projectInfo = yml['projectInfo']
-        projectPath = projectyml.stem.replace('-', '/')
+        projectPath = projectyml.dirname.replace('-', '/')
 
         paramsCsv = self.outdir / 'params.csv'
         pathsCsv = self.outdir / 'paths.csv'

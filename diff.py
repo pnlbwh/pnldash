@@ -11,12 +11,12 @@ class Diff(cli.Application):
         ['-o'],
         help='Output file')
 
-    def main(self, csv, txt):
+    def main(self, csv, findtxt):
         paths = pd.read_csv(csv)
         if paths.empty:
             raise Exception("'{}' is empty".format(csv))
         existing_paths = paths[paths.exists]['path']
-        with open(txt, 'r') as f:
+        with open(findtxt, 'r') as f:
             found_paths = f.read().splitlines()
         unaccounted_files = set(found_paths) - set(existing_paths)
         if unaccounted_files:
@@ -27,6 +27,8 @@ class Diff(cli.Application):
                     f.write(path + '\n')
             print("{} unaccounted file(s) found.".format(len(unaccounted_files)))
         else:
+            with open(self.out, 'w') as f:
+                pass # make empty file
             sys.stderr.write("No unaccounted files found\n")
 
 
