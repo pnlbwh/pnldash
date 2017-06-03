@@ -5,6 +5,8 @@ import yaml
 from collections import OrderedDict
 import sys
 from os.path import getmtime
+import os
+from plumbum.cmd import scp
 
 PROJECT_YML = local.path('project.yml')
 PNL_PROJECTS_DB = 'PNL_PROJECTS_DB'
@@ -78,14 +80,9 @@ class Init(cli.Application):
 
 @App.subcommand("push")
 class Push(cli.Application):
-    """Copies project.yml to central project database"""
-
-    def readFullName(self):
-        return local.cwd.__str__().replace('/', '-')[1:] + '.yml'
+    """Copies project.yml and _pnlproj/* to central project database"""
 
     def main(self):
-        import os
-        from plumbum.cmd import scp
 
         centralRepo = os.environ.get(PNL_PROJECTS_DB, None)
 
@@ -94,7 +91,7 @@ class Push(cli.Application):
                 PNL_PROJECTS_DB)
             raise Exception(errmsg)
 
-        destDir = local.path(centralRepo) / local.cwd.__str__().replace('/', '-')[1:]
+        destDir = local.path(centralRepo) / local.cwd.__str__().replace('/', '---')[3:]
         destDir.mkdir()
 
         files = ['project.yml', PATHS_CSV, PARAMS_CSV, DIFF_TXT]

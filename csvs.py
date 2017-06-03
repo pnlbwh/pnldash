@@ -6,7 +6,7 @@ import os.path
 import glob
 import time
 
-PARAM_HDR = ['projectName', 'projectPath', 'description', 'paramId', 'param',
+PARAM_HDR = ['projectName', 'projectPath', 'grantId', 'description', 'paramId', 'param',
              'paramValue']
 PATH_HDR = ['projectName', 'projectPath', 'paramId', 'pathKey', 'caseid',
             'path', 'exists', 'modtime', 'modtimeStr']
