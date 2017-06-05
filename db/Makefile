@@ -1,12 +1,12 @@
 YMLS=$(wildcard db/*yml)
-# CSVS_PATHS:=$(YMLS:db/%.yml=_csvs/%--paths.csv)
-# CSVS_PARAMS:=$(YMLS:db/%.yml=_csvs/%--params.csv)
-# DIFFS:=$(YMLS:db/%.yml=_diff/%.txt)
 CSVS_PATHS:=$(wildcard */paths.csv)
 CSVS_PARAMS:=$(wildcard */params.csv)
 
 .PHONY: all
-all: paths.csv params.csv
+all: dashboard.html
+
+dashboard.html: dashboard.Rmd paths.csv params.csv
+	R -e "library('rmarkdown'); render('dashboard.Rmd')"
 
 paths.csv: $(CSVS_PATHS)
 	csvstack $(CSVS_PATHS) > $@

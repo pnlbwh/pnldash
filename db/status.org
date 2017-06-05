@@ -6,29 +6,21 @@ paths <- fread('paths.csv')
 params <- fread('params.csv')
 #+END_SRC
 
-#+BEGIN_SRC R :colnames yes
-d <- paths[,.(completed=sum(exists), total=.N), by=.(projectPath, pathKey, paramId)]
-params[paramId==0 & projectName=="pnlpublish",]
-#+END_SRC
 
-#+RESULTS:
-| projectName | projectPath                  | grantId | description | paramId | param                   | paramValue |
-|-------------+------------------------------+---------+-------------+---------+-------------------------+------------|
-| pnlpublish  | /home/reckbo/soft/pnlpublish | nil     |             |       0 | hash_tract_querier      | e045eab    |
-| pnlpublish  | /home/reckbo/soft/pnlpublish | nil     |             |       0 | hash_trainingDataT1AHCC | d6e5990    |
-| pnlpublish  | /home/reckbo/soft/pnlpublish | nil     |             |       0 | hash_BRAINSTools        | 41353e8    |
-| pnlpublish  | /home/reckbo/soft/pnlpublish | nil     |             |       0 | version_FreeSurfer      | 5.3.0      |
-| pnlpublish  | /home/reckbo/soft/pnlpublish | nil     |             |       0 | hash_UKFTractography    | 421a7ad    |
-
-#+BEGIN_SRC R :results output html :exports both
+#+BEGIN_SRC R :results output html
 require(xtable)
-d[, {
+#require(knitr)
+paths.grouped <- paths[,.(completed=sum(exists), total=.N), by=.(projectPath, pathKey, paramId)]
+paths.grouped[,
+{
 cat("<h2>",projectPath, paramId, "</h2>")
-pth=projectPath
-pid=paramId
-paramCombo = params[projectPath==pth & paramId==pid,]
+pp=projectPath
+pi=paramId
+paramCombo = params[projectPath==pp & paramId==pi, .(parameter=param, "parameter value"=paramValue),]
 print(xtable(paramCombo), type="html", include.rownames=F)
+cat("<br>")
 print(xtable(.SD), type="html", include.rownames=F)
+#print(kable(c(.SD, paramCombo), "html", booktabs=T, padding=2), type="html", include.rownames=F)
 }
 , by=.(projectPath,paramId)]
 
@@ -37,33 +29,33 @@ print(xtable(.SD), type="html", include.rownames=F)
 #+RESULTS:
 #+BEGIN_EXPORT html
 <h2> /home/reckbo/soft/pnlpipe 0 </h2><!-- html table generated in R 3.2.3 by xtable 1.8-2 package -->
-<!-- Sat Jun  3 12:27:50 2017 -->
+<!-- Sat Jun  3 16:11:59 2017 -->
 <table border=1>
-<tr> <th> projectName </th> <th> projectPath </th> <th> grantId </th> <th> description </th> <th> paramId </th> <th> param </th> <th> paramValue </th>  </tr>
-  <tr> <td> pnlpipe-development </td> <td> /home/reckbo/soft/pnlpipe </td> <td align="right"> 133789 </td> <td> blah blah blah </td> <td align="right">   0 </td> <td> fw </td> <td> b </td> </tr>
+<tr> <th> parameter </th> <th> parameter value </th>  </tr>
+  <tr> <td> fw </td> <td> b </td> </tr>
    </table>
-<!-- html table generated in R 3.2.3 by xtable 1.8-2 package -->
-<!-- Sat Jun  3 12:27:50 2017 -->
+<br><!-- html table generated in R 3.2.3 by xtable 1.8-2 package -->
+<!-- Sat Jun  3 16:11:59 2017 -->
 <table border=1>
 <tr> <th> pathKey </th> <th> completed </th> <th> total </th>  </tr>
   <tr> <td> fw </td> <td align="right">   0 </td> <td align="right">   2 </td> </tr>
    </table>
 <h2> /home/reckbo/soft/pnlpipe 1 </h2><!-- html table generated in R 3.2.3 by xtable 1.8-2 package -->
-<!-- Sat Jun  3 12:27:50 2017 -->
+<!-- Sat Jun  3 16:11:59 2017 -->
 <table border=1>
-<tr> <th> projectName </th> <th> projectPath </th> <th> grantId </th> <th> description </th> <th> paramId </th> <th> param </th> <th> paramValue </th>  </tr>
-  <tr> <td> pnlpipe-development </td> <td> /home/reckbo/soft/pnlpipe </td> <td align="right"> 133789 </td> <td> blah blah blah </td> <td align="right">   1 </td> <td> dwimaskPathKey </td> <td>  </td> </tr>
-  <tr> <td> pnlpipe-development </td> <td> /home/reckbo/soft/pnlpipe </td> <td align="right"> 133789 </td> <td> blah blah blah </td> <td align="right">   1 </td> <td> hash_tract_querier </td> <td> e045eab </td> </tr>
-  <tr> <td> pnlpipe-development </td> <td> /home/reckbo/soft/pnlpipe </td> <td align="right"> 133789 </td> <td> blah blah blah </td> <td align="right">   1 </td> <td> dwiPathKey </td> <td> dwi </td> </tr>
-  <tr> <td> pnlpipe-development </td> <td> /home/reckbo/soft/pnlpipe </td> <td align="right"> 133789 </td> <td> blah blah blah </td> <td align="right">   1 </td> <td> t1maskPathKey </td> <td>  </td> </tr>
-  <tr> <td> pnlpipe-development </td> <td> /home/reckbo/soft/pnlpipe </td> <td align="right"> 133789 </td> <td> blah blah blah </td> <td align="right">   1 </td> <td> hash_trainingDataT1AHCC </td> <td> d6e5990 </td> </tr>
-  <tr> <td> pnlpipe-development </td> <td> /home/reckbo/soft/pnlpipe </td> <td align="right"> 133789 </td> <td> blah blah blah </td> <td align="right">   1 </td> <td> hash_BRAINSTools </td> <td> 41353e8 </td> </tr>
-  <tr> <td> pnlpipe-development </td> <td> /home/reckbo/soft/pnlpipe </td> <td align="right"> 133789 </td> <td> blah blah blah </td> <td align="right">   1 </td> <td> version_FreeSurfer </td> <td> 5.3.0 </td> </tr>
-  <tr> <td> pnlpipe-development </td> <td> /home/reckbo/soft/pnlpipe </td> <td align="right"> 133789 </td> <td> blah blah blah </td> <td align="right">   1 </td> <td> hash_UKFTractography </td> <td> 421a7ad </td> </tr>
-  <tr> <td> pnlpipe-development </td> <td> /home/reckbo/soft/pnlpipe </td> <td align="right"> 133789 </td> <td> blah blah blah </td> <td align="right">   1 </td> <td> t1PathKey </td> <td> t1 </td> </tr>
+<tr> <th> parameter </th> <th> parameter value </th>  </tr>
+  <tr> <td> dwimaskPathKey </td> <td>  </td> </tr>
+  <tr> <td> hash_tract_querier </td> <td> e045eab </td> </tr>
+  <tr> <td> dwiPathKey </td> <td> dwi </td> </tr>
+  <tr> <td> t1maskPathKey </td> <td>  </td> </tr>
+  <tr> <td> hash_trainingDataT1AHCC </td> <td> d6e5990 </td> </tr>
+  <tr> <td> hash_BRAINSTools </td> <td> 41353e8 </td> </tr>
+  <tr> <td> version_FreeSurfer </td> <td> 5.3.0 </td> </tr>
+  <tr> <td> hash_UKFTractography </td> <td> 421a7ad </td> </tr>
+  <tr> <td> t1PathKey </td> <td> t1 </td> </tr>
    </table>
-<!-- html table generated in R 3.2.3 by xtable 1.8-2 package -->
-<!-- Sat Jun  3 12:27:50 2017 -->
+<br><!-- html table generated in R 3.2.3 by xtable 1.8-2 package -->
+<!-- Sat Jun  3 16:11:59 2017 -->
 <table border=1>
 <tr> <th> pathKey </th> <th> completed </th> <th> total </th>  </tr>
   <tr> <td> fs </td> <td align="right">   0 </td> <td align="right">   1 </td> </tr>
@@ -80,17 +72,17 @@ print(xtable(.SD), type="html", include.rownames=F)
   <tr> <td> dwi </td> <td align="right">   1 </td> <td align="right">   1 </td> </tr>
    </table>
 <h2> /home/reckbo/soft/pnlpublish 0 </h2><!-- html table generated in R 3.2.3 by xtable 1.8-2 package -->
-<!-- Sat Jun  3 12:27:50 2017 -->
+<!-- Sat Jun  3 16:11:59 2017 -->
 <table border=1>
-<tr> <th> projectName </th> <th> projectPath </th> <th> grantId </th> <th> description </th> <th> paramId </th> <th> param </th> <th> paramValue </th>  </tr>
-  <tr> <td> pnlpublish </td> <td> /home/reckbo/soft/pnlpublish </td> <td align="right">  </td> <td>  </td> <td align="right">   0 </td> <td> hash_tract_querier </td> <td> e045eab </td> </tr>
-  <tr> <td> pnlpublish </td> <td> /home/reckbo/soft/pnlpublish </td> <td align="right">  </td> <td>  </td> <td align="right">   0 </td> <td> hash_trainingDataT1AHCC </td> <td> d6e5990 </td> </tr>
-  <tr> <td> pnlpublish </td> <td> /home/reckbo/soft/pnlpublish </td> <td align="right">  </td> <td>  </td> <td align="right">   0 </td> <td> hash_BRAINSTools </td> <td> 41353e8 </td> </tr>
-  <tr> <td> pnlpublish </td> <td> /home/reckbo/soft/pnlpublish </td> <td align="right">  </td> <td>  </td> <td align="right">   0 </td> <td> version_FreeSurfer </td> <td> 5.3.0 </td> </tr>
-  <tr> <td> pnlpublish </td> <td> /home/reckbo/soft/pnlpublish </td> <td align="right">  </td> <td>  </td> <td align="right">   0 </td> <td> hash_UKFTractography </td> <td> 421a7ad </td> </tr>
+<tr> <th> parameter </th> <th> parameter value </th>  </tr>
+  <tr> <td> hash_tract_querier </td> <td> e045eab </td> </tr>
+  <tr> <td> hash_trainingDataT1AHCC </td> <td> d6e5990 </td> </tr>
+  <tr> <td> hash_BRAINSTools </td> <td> 41353e8 </td> </tr>
+  <tr> <td> version_FreeSurfer </td> <td> 5.3.0 </td> </tr>
+  <tr> <td> hash_UKFTractography </td> <td> 421a7ad </td> </tr>
    </table>
-<!-- html table generated in R 3.2.3 by xtable 1.8-2 package -->
-<!-- Sat Jun  3 12:27:50 2017 -->
+<br><!-- html table generated in R 3.2.3 by xtable 1.8-2 package -->
+<!-- Sat Jun  3 16:11:59 2017 -->
 <table border=1>
 <tr> <th> pathKey </th> <th> completed </th> <th> total </th>  </tr>
   <tr> <td> dwi </td> <td align="right">   0 </td> <td align="right">   3 </td> </tr>

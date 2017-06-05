@@ -1,0 +1,57 @@
+---
+title: "Flexdashboard"
+output:
+  flexdashboard::flex_dashboard:
+      theme: cosmo
+      navbar:
+      - { title: "PNL Project Dashboard Test", align: right }
+      source_code: embed
+      vertical_layout: scroll
+---
+
+
+```{r include=FALSE}
+require(knitr)
+require(data.table)
+paths <- fread('paths.csv')
+params <- fread('params.csv')
+paths.grouped <- paths[,.(completed=sum(exists), total=.N), by=.(projectPath, pathKey, paramId)]
+
+summarizePipeline <- function(projectPath, SD) {
+  result = SD[,
+          {
+          pp=projectPath
+          pi=paramId
+          paramCombo = params[projectPath==pp & paramId==pi, .(parameter=param, "parameter value"=paramValue),]
+          paramTable = kable(paramCombo)
+          pathsSummary = kable(.SD)
+          knit_expand(text='#### Pipeline id: {{paramId}} \
+          {{paramTable}} \
+          {{pathsSummary}} \
+          ')
+          }, by=.(paramId)][,V1]
+
+  c(knit_expand(text='# {{projectPath}} {data-navmenu="Projects"}'), result)
+}
+
+out = paths.grouped[,
+  {
+  summarizePipeline(projectPath, .SD)
+  }
+  , by=.(projectPath)][,V1]
+
+```
+
+`r paste(knit(text = out), collapse = '\n')`
+
+
+All Files
+=====================================
+
+
+```{r}
+require("data.table")
+require("DT")
+d <- fread("paths.csv")
+DT::datatable(d, options = list(bPaginate=F))
+```
