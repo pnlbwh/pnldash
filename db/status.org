@@ -26,78 +26,27 @@ print(xtable(.SD), type="html", include.rownames=F)
 
 #+END_SRC
 
+#+BEGIN_SRC R :colnames yes
+require(knitr)
+require(data.table)
+paths <- fread('paths.csv')
+params <- fread('params.csv')
+paths.grouped <- paths[,.(completed=sum(exists), total=.N), by=.(projectPath, pathKey, paramId)]
+
+out = NULL
+
+d <- paths.grouped[,
+{
+#cat("##",projectPath, paramId)
+pp=projectPath
+pi=paramId
+paramCombo = params[projectPath==pp & paramId==pi, .(parameter=param, "parameter value"=paramValue),]
+#knitr::kable(paramCombo)
+#knitr::kable(.SD)
+knit_expand(text='### {{projectPath}}')
+}
+, by=.(projectPath,paramId)]
+str(d[,V1])
+#+END_SRC
+
 #+RESULTS:
-#+BEGIN_EXPORT html
-<h2> /home/reckbo/soft/pnlpipe 0 </h2><!-- html table generated in R 3.2.3 by xtable 1.8-2 package -->
-<!-- Sat Jun  3 16:11:59 2017 -->
-<table border=1>
-<tr> <th> parameter </th> <th> parameter value </th>  </tr>
-  <tr> <td> fw </td> <td> b </td> </tr>
-   </table>
-<br><!-- html table generated in R 3.2.3 by xtable 1.8-2 package -->
-<!-- Sat Jun  3 16:11:59 2017 -->
-<table border=1>
-<tr> <th> pathKey </th> <th> completed </th> <th> total </th>  </tr>
-  <tr> <td> fw </td> <td align="right">   0 </td> <td align="right">   2 </td> </tr>
-   </table>
-<h2> /home/reckbo/soft/pnlpipe 1 </h2><!-- html table generated in R 3.2.3 by xtable 1.8-2 package -->
-<!-- Sat Jun  3 16:11:59 2017 -->
-<table border=1>
-<tr> <th> parameter </th> <th> parameter value </th>  </tr>
-  <tr> <td> dwimaskPathKey </td> <td>  </td> </tr>
-  <tr> <td> hash_tract_querier </td> <td> e045eab </td> </tr>
-  <tr> <td> dwiPathKey </td> <td> dwi </td> </tr>
-  <tr> <td> t1maskPathKey </td> <td>  </td> </tr>
-  <tr> <td> hash_trainingDataT1AHCC </td> <td> d6e5990 </td> </tr>
-  <tr> <td> hash_BRAINSTools </td> <td> 41353e8 </td> </tr>
-  <tr> <td> version_FreeSurfer </td> <td> 5.3.0 </td> </tr>
-  <tr> <td> hash_UKFTractography </td> <td> 421a7ad </td> </tr>
-  <tr> <td> t1PathKey </td> <td> t1 </td> </tr>
-   </table>
-<br><!-- html table generated in R 3.2.3 by xtable 1.8-2 package -->
-<!-- Sat Jun  3 16:11:59 2017 -->
-<table border=1>
-<tr> <th> pathKey </th> <th> completed </th> <th> total </th>  </tr>
-  <tr> <td> fs </td> <td align="right">   0 </td> <td align="right">   1 </td> </tr>
-  <tr> <td> dwied </td> <td align="right">   0 </td> <td align="right">   1 </td> </tr>
-  <tr> <td> dwimask </td> <td align="right">   0 </td> <td align="right">   1 </td> </tr>
-  <tr> <td> t1 </td> <td align="right">   1 </td> <td align="right">   1 </td> </tr>
-  <tr> <td> fsindwi </td> <td align="right">   0 </td> <td align="right">   1 </td> </tr>
-  <tr> <td> wmql </td> <td align="right">   0 </td> <td align="right">   1 </td> </tr>
-  <tr> <td> tractmeasures </td> <td align="right">   0 </td> <td align="right">   1 </td> </tr>
-  <tr> <td> t1mask </td> <td align="right">   0 </td> <td align="right">   1 </td> </tr>
-  <tr> <td> dwixc </td> <td align="right">   0 </td> <td align="right">   1 </td> </tr>
-  <tr> <td> ukf </td> <td align="right">   0 </td> <td align="right">   1 </td> </tr>
-  <tr> <td> t1xc </td> <td align="right">   1 </td> <td align="right">   1 </td> </tr>
-  <tr> <td> dwi </td> <td align="right">   1 </td> <td align="right">   1 </td> </tr>
-   </table>
-<h2> /home/reckbo/soft/pnlpublish 0 </h2><!-- html table generated in R 3.2.3 by xtable 1.8-2 package -->
-<!-- Sat Jun  3 16:11:59 2017 -->
-<table border=1>
-<tr> <th> parameter </th> <th> parameter value </th>  </tr>
-  <tr> <td> hash_tract_querier </td> <td> e045eab </td> </tr>
-  <tr> <td> hash_trainingDataT1AHCC </td> <td> d6e5990 </td> </tr>
-  <tr> <td> hash_BRAINSTools </td> <td> 41353e8 </td> </tr>
-  <tr> <td> version_FreeSurfer </td> <td> 5.3.0 </td> </tr>
-  <tr> <td> hash_UKFTractography </td> <td> 421a7ad </td> </tr>
-   </table>
-<br><!-- html table generated in R 3.2.3 by xtable 1.8-2 package -->
-<!-- Sat Jun  3 16:11:59 2017 -->
-<table border=1>
-<tr> <th> pathKey </th> <th> completed </th> <th> total </th>  </tr>
-  <tr> <td> dwi </td> <td align="right">   0 </td> <td align="right">   3 </td> </tr>
-  <tr> <td> dwied </td> <td align="right">   0 </td> <td align="right">   3 </td> </tr>
-  <tr> <td> t1mask </td> <td align="right">   0 </td> <td align="right">   3 </td> </tr>
-  <tr> <td> fs_brain </td> <td align="right">   0 </td> <td align="right">   3 </td> </tr>
-  <tr> <td> dwimask </td> <td align="right">   0 </td> <td align="right">   3 </td> </tr>
-  <tr> <td> fs_wmparc </td> <td align="right">   0 </td> <td align="right">   3 </td> </tr>
-  <tr> <td> t1 </td> <td align="right">   0 </td> <td align="right">   3 </td> </tr>
-  <tr> <td> wmql </td> <td align="right">   0 </td> <td align="right">   3 </td> </tr>
-  <tr> <td> tractmeasures </td> <td align="right">   0 </td> <td align="right">   3 </td> </tr>
-  <tr> <td> dwixc </td> <td align="right">   0 </td> <td align="right">   3 </td> </tr>
-  <tr> <td> ukf </td> <td align="right">   0 </td> <td align="right">   3 </td> </tr>
-  <tr> <td> t1xc </td> <td align="right">   0 </td> <td align="right">   3 </td> </tr>
-  <tr> <td> fsindwi </td> <td align="right">   0 </td> <td align="right">   3 </td> </tr>
-   </table>
-Empty data.table (0 rows) of 2 cols: projectPath,paramId
-#+END_EXPORT

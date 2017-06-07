@@ -14,7 +14,7 @@ CACHE_DIR = local.path("_pnlproj")
 PATHS_CSV = local.path(CACHE_DIR / "paths.csv")
 PARAMS_CSV = local.path(CACHE_DIR / "params.csv")
 FIND_TXT = local.path(CACHE_DIR / "findPaths.txt")
-DIFF_TXT = local.path(CACHE_DIR / "diffPaths.txt")
+DIFF_CSV = local.path(CACHE_DIR / "diffPaths.csv")
 FIND_EXTS = ['.nrrd', '.nii.gz', '.nii', '.vtk', '.nhdr', '.mgz']
 
 TEMPLATE = """\
@@ -94,7 +94,7 @@ class Push(cli.Application):
         destDir = local.path(centralRepo) / local.cwd.__str__().replace('/', '---')[3:]
         destDir.mkdir()
 
-        files = ['project.yml', PATHS_CSV, PARAMS_CSV, DIFF_TXT]
+        files = ['project.yml', PATHS_CSV, PARAMS_CSV, DIFF_CSV]
         for file in files:
             scp[file, destDir] & FG
             print("Copied '{}' to '{}'".format(file, destDir))
@@ -134,7 +134,7 @@ class Find(find.Find):
 import diff
 @App.subcommand("diff")
 class Diff(diff.Diff):
-    out = DIFF_TXT
+    out = DIFF_CSV
 
     def main(self):
 

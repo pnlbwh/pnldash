@@ -1,11 +1,12 @@
 YMLS=$(wildcard db/*yml)
 CSVS_PATHS:=$(wildcard */paths.csv)
 CSVS_PARAMS:=$(wildcard */params.csv)
+CSVS_DIFFPATHS:=$(wildcard */diffPaths.csv)
 
 .PHONY: all
 all: dashboard.html
 
-dashboard.html: dashboard.Rmd paths.csv params.csv
+dashboard.html: dashboard.Rmd paths.csv params.csv diffPaths.csv
 	R -e "library('rmarkdown'); render('dashboard.Rmd')"
 
 paths.csv: $(CSVS_PATHS)
@@ -14,6 +15,8 @@ paths.csv: $(CSVS_PATHS)
 params.csv: $(CSVS_PARAMS)
 	csvstack $(CSVS_PARAMS) > $@
 
+diffPaths.csv: $(CSVS_DIFFPATHS)
+	csvstack $(CSVS_DIFFPATHS) > $@
 
 ##############################################################################
 # Python Environments

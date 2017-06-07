@@ -9,7 +9,7 @@ import time
 PARAM_HDR = ['projectName', 'projectPath', 'grantId', 'description', 'paramId', 'param',
              'paramValue']
 PATH_HDR = ['projectName', 'projectPath', 'paramId', 'pathKey', 'caseid',
-            'path', 'exists', 'modtime', 'modtimeStr']
+            'path', 'exists', 'modtime', 'modtimeStr', 'sizeMB']
 
 def concat(l):
     return l if l == [] else [item for sublist in l for item in sublist]
@@ -81,16 +81,18 @@ class Csvs(cli.Application):
                                 mtime = None
                                 mtimeStr = None
                                 exists = False
+                                sizeMB = None
                                 if os.path.exists(path):
                                     mtime = os.path.getmtime(path)
                                     mtimeStr = time.strftime(
                                         '%Y-%m-%d %H:%M:%S',
                                         time.localtime(mtime))
                                     exists = True
+                                    sizeMB =  os.path.getsize(path)/1024.0/1024.0
                                 csvwriterPaths.writerow(
                                     [projectInfo['projectName'], projectPath,
                                      paramId, pathKey, caseid, path, exists,
-                                     mtime, mtimeStr])
+                                     mtime, mtimeStr, sizeMB])
             print("Made '{}'".format(paramsCsv))
             print("Made '{}'".format(pathsCsv))
 
