@@ -6,10 +6,10 @@ import os.path
 import glob
 import time
 
-PARAM_HDR = ['projectName', 'projectPath', 'grantId', 'description', 'paramId', 'param',
+PARAM_HDR = ['projectPath', 'grantId', 'description', 'paramId', 'param',
              'paramValue']
-PATH_HDR = ['projectName', 'projectPath', 'paramId', 'pathKey', 'caseid',
-            'path', 'exists', 'modtime', 'modtimeStr', 'sizeMB']
+PATH_HDR = ['projectPath', 'paramId', 'pathKey', 'caseid',
+            'path', 'sizeMB', 'modtime', 'modtimeStr', 'exists']
 
 def concat(l):
     return l if l == [] else [item for sublist in l for item in sublist]
@@ -61,7 +61,7 @@ class Csvs(cli.Application):
                 for paramId, pipeline in enumerate(yml['pipelines']):
                     for param, paramVal in pipeline['parameters'].items():
                         csvwriterParams.writerow(
-                            [projectInfo['projectName'], projectPath,
+                            [projectPath,
                              projectInfo['grantId'],
                              projectInfo['description'], paramId, param,
                              paramVal])
@@ -90,9 +90,9 @@ class Csvs(cli.Application):
                                     exists = True
                                     sizeMB =  os.path.getsize(path)/1024.0/1024.0
                                 csvwriterPaths.writerow(
-                                    [projectInfo['projectName'], projectPath,
-                                     paramId, pathKey, caseid, path, exists,
-                                     mtime, mtimeStr, sizeMB])
+                                    [projectPath,
+                                     paramId, pathKey, caseid, path, sizeMB,
+                                     mtime, mtimeStr, exists])
             print("Made '{}'".format(paramsCsv))
             print("Made '{}'".format(pathsCsv))
 

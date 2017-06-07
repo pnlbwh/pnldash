@@ -12,38 +12,14 @@ output:
 Overview
 =====================================
 
-
 ```{r}
 require("data.table")
-require("DT")
 paths <- fread("paths.csv")
 diffPaths <- fread("diffPaths.csv")
 paths.byProject = paths[paths[,exists],.('project files (MB)'=sum(sizeMB)),by=projectPath]
 diffPaths.byProject = diffPaths[,.('extra files (MB)'=sum(sizeMB)), by=projectPath]
 table = merge(paths.byProject, diffPaths.byProject, by="projectPath")
 DT::datatable(table, options = list(bPaginate=F))
-```
-
-
-All Project Files
-=====================================
-
-
-```{r}
-require("data.table")
-require("DT")
-d <- fread("paths.csv")
-DT::datatable(d, options = list(bPaginate=F))
-```
-
-All Extra Files
-=====================================
-
-```{r}
-require("data.table")
-require("DT")
-d <- fread("diffPaths.csv")
-DT::datatable(d, options = list(bPaginate=F))
 ```
 
 ```{r include=FALSE}
@@ -59,6 +35,7 @@ summarizePipeline <- function(projectPath, projectSD) {
           pp=projectPath
           pi=paramId
           paramCombo = params[projectPath==pp & paramId==pi, .(parameter=param, "parameter value"=paramValue),]
+          setorder(paramCombo, parameter)
           paramTable = kable(paramCombo)
           pathsSummary = kable(.SD)
           knit_expand(text='#### Pipeline id: {{paramId}} \
@@ -79,3 +56,24 @@ out = paths.grouped[,
 ```
 
 `r paste(knit(text = out), collapse = '\n')`
+
+
+All Project Files
+=====================================
+
+
+```{r}
+require("DT")
+d <- fread("paths.csv")
+setorder(d, -exists, -sizeMB)
+DT::datatable(d, options = list(bPaginate=F))
+```
+
+All Extra Files
+=====================================
+
+```{r}
+d <- fread("diffPaths.csv")
+setorder(d, -sizeMB)
+DT::datatable(d, options = list(bPaginate=F))
+```
