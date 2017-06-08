@@ -10,7 +10,7 @@ def fileFilter(p):
     return any(ext in ''.join(p.suffixes) for ext in EXTS) and not p.islink()
 
 def dirFilter(d):
-    return not (d / 'project.yml').exists()
+    return not (d / 'project.yml').exists() and not d.islink()
 
 
 class Find(cli.Application):
