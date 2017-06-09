@@ -34,27 +34,49 @@ paths <- fread('paths.csv')
 params <- fread('params.csv')
 paths.grouped <- paths[,.(completed=sum(exists), missing=sum(not(exists)), total=.N, 'size (G)'=sum(sizeMB, na.rm=T)/1024), by=.(projectPath, pathKey, paramId)]
 
+indentText <- function(text) {
+  paste0("    ", gsub("\n", "\n    ", text))
+}
+
+library(xtable)
+
 summarizePipeline <- function(projectpath, projectSD) {
   pipelinesSummary = projectSD[,
           {
           paramid=paramId
-          paramCombo = params[projectPath==projectpath & paramId==paramid, .(parameter=param, "parameter value"=paramValue),]
-          setorder(paramCombo, parameter)
-          paramTable = kable(paramCombo)
+          paramCombo = params[projectPath==projectpath & paramId==paramid,]
+          pipelineDescription = paramCombo[param=="description",paramValue]
+          if (length(pipelineDescription) == 0) {
+            pipelineDescription = paramCombo[param=="_description",paramValue]
+          }
+          if (length(pipelineDescription) == 0) {
+            pipelineDescription = "None"
+          }
+          paramCombo = paramCombo[param != "description" & param != "_description"]
+          setorder(paramCombo, param)
+          paramTable = kable(paramCombo[,.(parameter=param, "parameter value"=paramValue)])
+          if (nrow(paramCombo) == 0) {
+            paramTable = "None given."
+          }
           pathsSummary = kable(.SD, digits=1)
           knit_expand(text='### <b>PIPELINE #{{paramId}}</b>
-          {{paramTable}}
-          {{pathsSummary}}
-          ')
+#### Description
+      {{pipelineDescription}}
+
+#### Parameters
+{{paramTable}}
+
+#### Output Paths
+{{pathsSummary}}')
           }, by=.(paramId)][,V1]
 
   pageHeader = knit_expand(text='# {{projectpath}} {data-navmenu="Projects"}')
-  projectDescription = paste0("    ", gsub("\n", "\n    ", params[projectPath==projectpath,description][1]))
+  # Add leading 4 spaces to make description a markdown quotation block, hence preserving its formatting
+  projectDescription = indentText(params[projectPath==projectpath,description][1])
+  ## projectSummary =
   rowSep = "--------------"
-  #projectOverview = paste("Overview", rowSep, projectDescription, collapse='\n')
   projectOverview = c("Row1", rowSep, "### **Description**", projectDescription)
   c(pageHeader, projectOverview, "  ", "Row2 {.tabset}  ", rowSep, pipelinesSummary)
-  #c(knit_expand(text=), result)
 }
 
 out = paths.grouped[,
