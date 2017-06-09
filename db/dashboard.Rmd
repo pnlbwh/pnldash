@@ -2,49 +2,59 @@
 title: "Flexdashboard"
 output:
   flexdashboard::flex_dashboard:
-      theme: cosmo
       navbar:
       - { title: "PNL Project Dashboard Test", align: right }
       source_code: embed
-      vertical_layout: scroll
+      orientation: columns
+always_allow_html: yes
 ---
+
+```{r setup, include=FALSE}
+library(data.table)
+library(DT)
+library(magrittr)
+library(flexdashboard)
+library(knitr)
+```
 
 Overview
 =====================================
 
 ```{r}
-require("data.table")
 paths <- fread("paths.csv")
 diffPaths <- fread("diffPaths.csv")
-paths.byProject = paths[paths[,exists],.('project files (MB)'=sum(sizeMB)),by=projectPath]
-diffPaths.byProject = diffPaths[,.('extra files (MB)'=sum(sizeMB)), by=projectPath]
+paths.byProject = paths[paths[,exists],.('project files (G)'=sum(sizeMB)/1024),by=projectPath]
+diffPaths.byProject = diffPaths[,.('extra files (G)'=sum(sizeMB)/1024), by=projectPath]
 table = merge(paths.byProject, diffPaths.byProject, by="projectPath")
-DT::datatable(table, options = list(bPaginate=F))
+DT::datatable(table, options = list(bPaginate=F)) %>% DT::formatRound(c('project files (G)', 'extra files (G)'), 1)
 ```
 
 ```{r include=FALSE}
-require(knitr)
-require(data.table)
 paths <- fread('paths.csv')
 params <- fread('params.csv')
-paths.grouped <- paths[,.(completed=sum(exists), total=.N), by=.(projectPath, pathKey, paramId)]
+paths.grouped <- paths[,.(completed=sum(exists), missing=sum(not(exists)), total=.N, 'size (G)'=sum(sizeMB, na.rm=T)/1024), by=.(projectPath, pathKey, paramId)]
 
-summarizePipeline <- function(projectPath, projectSD) {
-  result = projectSD[,
+summarizePipeline <- function(projectpath, projectSD) {
+  pipelinesSummary = projectSD[,
           {
-          pp=projectPath
-          pi=paramId
-          paramCombo = params[projectPath==pp & paramId==pi, .(parameter=param, "parameter value"=paramValue),]
+          paramid=paramId
+          paramCombo = params[projectPath==projectpath & paramId==paramid, .(parameter=param, "parameter value"=paramValue),]
           setorder(paramCombo, parameter)
           paramTable = kable(paramCombo)
-          pathsSummary = kable(.SD)
-          knit_expand(text='#### Pipeline id: {{paramId}} \
-          {{paramTable}} \
-          {{pathsSummary}} \
+          pathsSummary = kable(.SD, digits=1)
+          knit_expand(text='### <b>PIPELINE #{{paramId}}</b>
+          {{paramTable}}
+          {{pathsSummary}}
           ')
           }, by=.(paramId)][,V1]
 
-  c(knit_expand(text='# {{projectPath}} {data-navmenu="Projects"}'), result)
+  pageHeader = knit_expand(text='# {{projectpath}} {data-navmenu="Projects"}')
+  projectDescription = paste0("    ", gsub("\n", "\n    ", params[projectPath==projectpath,description][1]))
+  rowSep = "--------------"
+  #projectOverview = paste("Overview", rowSep, projectDescription, collapse='\n')
+  projectOverview = c("Row1", rowSep, "### **Description**", projectDescription)
+  c(pageHeader, projectOverview, "  ", "Row2 {.tabset}  ", rowSep, pipelinesSummary)
+  #c(knit_expand(text=), result)
 }
 
 out = paths.grouped[,
@@ -55,19 +65,18 @@ out = paths.grouped[,
 
 ```
 
-`r paste(knit(text = out), collapse = '\n')`
+`r paste(out, collapse = '\n')`
 
 
 All Project Files
 =====================================
 
-
 ```{r}
-require("DT")
-d <- fread("paths.csv")
+d <- fread("paths.csv")[1:1000][,modtime:=modtimeStr][,modtimeStr:=NULL]
 setorder(d, -exists, -sizeMB)
-DT::datatable(d, options = list(bPaginate=F))
+DT::datatable(d, filter = 'top', options = list(bPaginate=F)) %>% formatRound('sizeMB', 1)
 ```
+
 
 All Extra Files
 =====================================
@@ -75,5 +84,5 @@ All Extra Files
 ```{r}
 d <- fread("diffPaths.csv")
 setorder(d, -sizeMB)
-DT::datatable(d, options = list(bPaginate=F))
+DT::datatable(d, options = list(bPaginate=F)) %>% formatRound('sizeMB', 1)
 ```
