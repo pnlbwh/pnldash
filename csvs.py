@@ -6,7 +6,7 @@ import os.path
 import glob
 import time
 
-PARAM_HDR = ['projectPath', 'grantId', 'description', 'paramId', 'param',
+PARAM_HDR = ['projectPath', 'grantId', 'description', 'paramId', 'pipelineDescription', 'param',
              'paramValue']
 PATH_HDR = ['projectPath', 'paramId', 'pathKey', 'caseid',
             'path', 'sizeMB', 'modtime', 'modtimeStr', 'exists']
@@ -63,7 +63,7 @@ class Csvs(cli.Application):
                         csvwriterParams.writerow(
                             [projectPath,
                              projectInfo['grantId'],
-                             projectInfo['description'], paramId, param,
+                             projectInfo['description'], paramId, pipeline['description'], param,
                              paramVal])
                     caseids = readCaselist(pipeline['paths']['caselist'])
                     caseidString = pipeline['paths']['caseid']
