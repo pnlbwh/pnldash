@@ -52,6 +52,7 @@ summarizePipeline <- function(projectpath, projectSD) {
           }
           pathsSummary = kable(.SD, digits=1)
           diskUsage = .SD[,sum(.SD$'size (G)')] %>% round(digits=1)
+          caselist = kable(unique(PATHS[projectPath==projectpath & paramId==paramid,caseid]))
           knit_expand(text='### PIPELINE #{{paramId}} ({{diskUsage}}G)
 #### Description
 {{pipelineDescription}}
@@ -60,7 +61,11 @@ summarizePipeline <- function(projectpath, projectSD) {
 {{paramTable}}
 
 #### Output Paths
-{{pathsSummary}}')
+{{pathsSummary}}
+
+#### Caselist
+{{caselist}}
+')
           }, by=.(paramId)][,V1]
 
   spaceTakenTable = SPACE_TABLE[projectPath==projectpath][,projectPath:=NULL]
