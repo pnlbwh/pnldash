@@ -14,13 +14,19 @@ CACHE_DIR = local.path("_pnlproj")
 PATHS_CSV = local.path(CACHE_DIR / "paths.csv")
 PARAMS_CSV = local.path(CACHE_DIR / "params.csv")
 FIND_TXT = local.path(CACHE_DIR / "findPaths.txt")
+DU_CSV = local.path(CACHE_DIR / "du.csv")
 DIFF_CSV = local.path(CACHE_DIR / "diffPaths.csv")
 FIND_EXTS = ['.nrrd', '.nii.gz', '.nii', '.vtk', '.nhdr', '.mgz']
 
 TEMPLATE = """\
 projectInfo:
     grantId:
-    description:
+    description: |
+                 Meaning of path keys:
+                 fs - freesurfer subject directory
+                 dwied: eddy corrected DWI
+                 dwimask: FSL bet generated DWI mask
+                 etc.
 pipelines:
     - parameters:
         version_FreeSurfer: 5.3.0
@@ -29,8 +35,7 @@ pipelines:
         hash_BRAINSTools: 41353e8
         hash_trainingDataT1AHCC: d6e5990
       paths:
-        fs_brain: _data/003_GNX_007/freesurfer/mri/brain.mgz
-        fs_wmparc: _data/003_GNX_007/freesurfer/mri/wmparc.mgz
+        fs: _data/003_GNX_007/freesurfer/*/*
         dwied: _data/003_GNX_007/std_dwied0.nrrd
         dwimask: _data/003_GNX_007/std_dwimask0.nrrd
         t1mask: _data/003_GNX_007/std_t1mask0.nrrd
@@ -93,7 +98,7 @@ class Push(cli.Application):
         destDir = local.path(centralRepo) / local.cwd.__str__().replace('/', '---')[3:]
         destDir.mkdir()
 
-        files = ['project.yml', PATHS_CSV, PARAMS_CSV, DIFF_CSV]
+        files = ['project.yml', PATHS_CSV, PARAMS_CSV, DIFF_CSV, DU_CSV]
         for file in files:
             scp[file, destDir] & FG
             print("Copied '{}' to '{}'".format(file, destDir))
@@ -104,6 +109,7 @@ import csvs
 
 @App.subcommand("csvs")
 class Csvs(csvs.Csvs):
+    """Generates _pnlproj/paths.csv and _pnlproj/params.csv from project.yml"""
     outdir = CACHE_DIR
 
     useCache = cli.Flag(['-c', '--cache'], default=False, mandatory=False, help="Use cached results \
@@ -122,17 +128,24 @@ import find
 find.Find.out = FIND_TXT
 @App.subcommand("find")
 class Find(find.Find):
-    """Finds image files in project directory."""
+    """Finds all image files in the project directory."""
 
     outdir = CACHE_DIR
 
     def main(self):
         find.Find.main(self, PROJECT_YML.dirname)
+        from plumbum.cmd import du
+        diskUsageG = float(du('-sb').split()[0])/1024.0/1024.0/1024.0
+        with open(DU_CSV, 'w') as f:
+            f.write("projectPath,diskUsageG\n")
+            f.write('"{}",{}'.format(PROJECT_YML.dirname, diskUsageG))
+        print("Made '{}'".format(DU_CSV))
 
 
 import diff
 @App.subcommand("diff")
 class Diff(diff.Diff):
+    """Lists the image files that are not accounted for in project.yml."""
     out = DIFF_CSV
 
     def main(self):

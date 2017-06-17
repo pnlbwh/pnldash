@@ -7,6 +7,17 @@ import csv
 import os
 
 
+def getsize(path):
+    pathP = local.path(path)
+    if not pathP.exists():
+        return 0
+    if '.nhdr' in pathP.suffixes:
+        return os.path.getsize(path)/1024.0/1024.0 + \
+            getsize(pathP.with_suffix('.raw').__str__()) + \
+            getsize(pathP.with_suffix('.raw.gz').__str__())
+    return os.path.getsize(path)/1024.0/1024.0
+
+
 class Diff(cli.Application):
 
     out = cli.SwitchAttr(
@@ -28,13 +39,15 @@ class Diff(cli.Application):
                 csvwriter = csv.writer(f)
                 csvwriter.writerow(header)
                 sys.stderr.write(', '.join(header) + '\n')
+                sizeMBsum = 0
                 for path in unaccounted_files:
-                    sizeMB = os.path.getsize(path)/1024.0/1024.0
+                    sizeMB = getsize(path)
                     relativePath = local.path(path).relative_to(local.cwd)
                     row = [local.cwd, relativePath, sizeMB]
                     sys.stderr.write(', '.join(map(str,row)) + '\n')
                     csvwriter.writerow(row)
-            print("{} unaccounted file(s) found.".format(len(unaccounted_files)))
+                    sizeMBsum = sizeMBsum + sizeMB
+            print("{} unaccounted file(s) found, taking up {}G of disk space".format(len(unaccounted_files), sizeMBsum/1024.0))
         else:
             with open(self.out, 'w') as f:
                 pass # make empty file

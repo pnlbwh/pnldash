@@ -3,7 +3,7 @@
 from plumbum import cli, local
 import sys
 
-EXTS = ['.nrrd', '.nii.gz', '.nii', '.vtk', '.nhdr', '.mgz']
+EXTS = ['.nrrd', '.nii.gz', '.nii', '.vtk', '.nhdr', '.mgz', '.dcm', '.dcm.gz', '.IMA', '.IMA.gz']
 
 
 def fileFilter(p):

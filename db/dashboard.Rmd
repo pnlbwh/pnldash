@@ -21,18 +21,19 @@ Overview
 =====================================
 
 ```{r}
-paths <- fread("paths.csv")
+PATHS <- fread("paths.csv")
 diffPaths <- fread("diffPaths.csv")
-paths.byProject = paths[paths[,exists],.('project files (G)'=sum(sizeMB)/1024),by=projectPath]
+DU <- fread("du.csv")
+paths.byProject = PATHS[PATHS[,exists] & ! path %like% '\\.\\./.*', .('project files (G)'=sum(sizeMB)/1024),by=projectPath]
 diffPaths.byProject = diffPaths[,.('extra files (G)'=sum(sizeMB)/1024), by=projectPath]
-SPACE_TABLE = merge(paths.byProject, diffPaths.byProject, by="projectPath")
-DT::datatable(SPACE_TABLE, options = list(bPaginate=F))%>% DT::formatRound(c('project files (G)', 'extra files (G)'), 1)
+SPACE_TABLE.a = merge(paths.byProject, diffPaths.byProject, by="projectPath")
+SPACE_TABLE = merge(SPACE_TABLE.a, DU, by="projectPath")[,'total directory size (G)':=diskUsageG][,diskUsageG:=NULL]
+DT::datatable(SPACE_TABLE, options = list(bPaginate=F))%>% DT::formatRound(c('project files (G)', 'extra files (G)', 'total directory size (G)'), 2)
 ```
 
 ```{r include=FALSE}
-paths <- fread('paths.csv')
 params <- fread('params.csv')
-paths.grouped <- paths[,.( completed=sum(exists), missing=sum(not(exists)), total=.N, 'size (G)'=sum(sizeMB, na.rm=T)/1024, examplePath=head(path,n=1)), by=.(projectPath, pathKey, paramId)]
+paths.grouped <- PATHS[,.( completed=sum(exists), missing=sum(not(exists)), total=.N, 'size (G)'=sum(sizeMB, na.rm=T)/1024, examplePath=head(path,n=1)), by=.(projectPath, pathKey, paramId)]
 
 indentText <- function(text) {
   paste0("    ", gsub("\n", "\n    ", text))

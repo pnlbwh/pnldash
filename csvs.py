@@ -29,6 +29,17 @@ def readCaselist(caselist):
         raise Exception("caselist field must be string or list type")
 
 
+def getsize(path):
+    pathP = local.path(path)
+    if not pathP.exists():
+        return 0
+    if '.nhdr' in pathP.suffixes:
+        return os.path.getsize(path)/1024.0/1024.0 + \
+            getsize(pathP.with_suffix('.raw').__str__()) + \
+            getsize(pathP.with_suffix('.raw.gz').__str__())
+    return os.path.getsize(path)/1024.0/1024.0
+
+
 class Csvs(cli.Application):
 
     outdir = cli.SwitchAttr(
@@ -88,7 +99,7 @@ class Csvs(cli.Application):
                                         '%Y-%m-%d %H:%M:%S',
                                         time.localtime(mtime))
                                     exists = True
-                                    sizeMB =  os.path.getsize(path)/1024.0/1024.0
+                                    sizeMB =  getsize(path)
                                 csvwriterPaths.writerow(
                                     [projectPath,
                                      paramId, pathKey, caseid, path, sizeMB,
