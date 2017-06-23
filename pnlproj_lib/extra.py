@@ -8,7 +8,12 @@ import os
 from util import getsize
 
 
+def heading(s):
+    return s + '\n' + len(s) * '-'
+
+
 def extra(pathsCsv, findtxt, out, ls=False):
+    print(heading('Extra Image Files'))
     paths = pd.read_csv(pathsCsv)
     if paths.empty:
         raise Exception("'{}' is empty".format(pathsCsv))
@@ -32,7 +37,8 @@ def extra(pathsCsv, findtxt, out, ls=False):
                     sys.stderr.write(', '.join(map(str,row)) + '\n')
                 csvwriter.writerow(row)
                 sizeMBsum = sizeMBsum + sizeMB
-        print("{0} unaccounted file(s) found, disk usage: {1:.2f}G".format(len(unaccounted_files), sizeMBsum/1024.0))
+        print("{} unaccounted file(s) found.".format(len(unaccounted_files)))
+        print("disk usage (G): {:.2f}".format(sizeMBsum/1024.0))
     else:
         with open(self.out, 'w') as f:
             pass # make empty file

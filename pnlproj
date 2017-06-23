@@ -108,21 +108,6 @@ class Push(cli.Application):
             print("Copied '{}' to '{}'".format(file, destDir))
 
 
-class Csvs(cli.Application):
-    """Generates _pnlproj/paths.csv and _pnlproj/params.csv from project.yml"""
-
-    useCache = cli.Flag(['-c', '--cache'], default=False, mandatory=False, help="Use cached results \
-to avoid recomputing paths.csv")
-
-    def main(self):
-        if not self.useCache or not PATHS_CSV.exists() or (getmtime(PROJECT_YML) > getmtime(PATHS_CSV)):
-            pnlproj_lib.csvs.csvs(PROJECT_YML, CACHE_DIR)
-        else:
-            print(
-                "'{}' is newer than '{}', so not regenerating.".format(
-                    PATHS_CSV, PROJECT_YML))
-
-
 @App.subcommand("find")
 class Find(cli.Application):
     """Finds all image files in the project directory and saves result to _pnlproj/findPaths.txt."""
@@ -137,21 +122,6 @@ class Find(cli.Application):
         print("Made '{}'".format(DU_CSV))
 
 
-@App.subcommand("extra")
-class Extra(cli.Application):
-    """Lists the extra image files that are not accounted for in project.yml."""
-
-    ls = cli.Flag(['-l', '--ls'], default=False, help="List extra files")
-
-    def main(self):
-        Csvs.invoke()
-        if not FIND_TXT.exists():
-            Find.invoke()
-        else:
-            print("'{}' already exists, using that to find unaccounted files (run 'pnlproj find' to update it).".format(FIND_TXT))
-        pnlproj_lib.extra.extra(PATHS_CSV, FIND_TXT, EXTRA_CSV, self.ls)
-
-
 def heading(s):
     return s + '\n' + len(s) * '-'
 
@@ -159,8 +129,16 @@ def heading(s):
 class Summary(cli.Application):
     """Prints a summary of the project disk usage."""
 
+    ls = cli.Flag(['-l', '--ls'], default=False, help="List extra image files not accounted for by pipelines")
+
     def main(self):
-        Extra.invoke()
+        pnlproj_lib.csvs.csvs(PROJECT_YML, CACHE_DIR)
+        if not FIND_TXT.exists():
+            Find.invoke()
+        else:
+            print("'{}' already exists, using that to find unaccounted files (run 'pnlproj find' to update it).".format(FIND_TXT))
+        pnlproj_lib.extra.extra(PATHS_CSV, FIND_TXT, EXTRA_CSV, self.ls)
+        print
 
         pd.options.display.float_format = '{:,.2f}'.format
 
@@ -176,9 +154,11 @@ class Summary(cli.Application):
         print(heading('Pipeline Files'))
         print(st.to_string(index=False))
         pipelineDiskUsage = paths['sizeMB'].sum() / 1024.0
-        print("total: {:.2f}G".format(pipelineDiskUsage))
+        print("disk usage (G): {:.2f}".format(pipelineDiskUsage))
         totalDiskUsage = du['diskUsageG'].iloc[0]
-        print("directory size: {:.2f}G".format(totalDiskUsage))
+        print
+        print(heading("Project Directory"))
+        print("disk usage (G): {:.2f}".format(totalDiskUsage))
 
 if __name__ == '__main__':
     CACHE_DIR.mkdir()
