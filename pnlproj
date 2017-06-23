@@ -7,6 +7,10 @@ import sys
 from os.path import getmtime
 import os
 from plumbum.cmd import scp
+import pandas as pd
+import pnlproj_lib.csvs
+import pnlproj_lib.extra
+import find
 
 PROJECT_YML = local.path('project.yml')
 PNL_PROJECTS_DB = 'PNL_PROJECTS_DB'
@@ -15,7 +19,7 @@ PATHS_CSV = local.path(CACHE_DIR / "paths.csv")
 PARAMS_CSV = local.path(CACHE_DIR / "params.csv")
 FIND_TXT = local.path(CACHE_DIR / "findPaths.txt")
 DU_CSV = local.path(CACHE_DIR / "du.csv")
-DIFF_CSV = local.path(CACHE_DIR / "diffPaths.csv")
+EXTRA_CSV = local.path(CACHE_DIR / "diffPaths.csv")
 FIND_EXTS = ['.nrrd', '.nii.gz', '.nii', '.vtk', '.nhdr', '.mgz']
 
 TEMPLATE = """\
@@ -98,42 +102,33 @@ class Push(cli.Application):
         destDir = local.path(centralRepo) / local.cwd.__str__().replace('/', '---')[3:]
         destDir.mkdir()
 
-        files = ['project.yml', PATHS_CSV, PARAMS_CSV, DIFF_CSV, DU_CSV]
+        files = ['project.yml', PATHS_CSV, PARAMS_CSV, EXTRA_CSV, DU_CSV]
         for file in files:
             scp[file, destDir] & FG
             print("Copied '{}' to '{}'".format(file, destDir))
 
 
-import csvs
-
-
-@App.subcommand("csvs")
-class Csvs(csvs.Csvs):
+class Csvs(cli.Application):
     """Generates _pnlproj/paths.csv and _pnlproj/params.csv from project.yml"""
-    outdir = CACHE_DIR
 
     useCache = cli.Flag(['-c', '--cache'], default=False, mandatory=False, help="Use cached results \
 to avoid recomputing paths.csv")
 
     def main(self):
         if not self.useCache or not PATHS_CSV.exists() or (getmtime(PROJECT_YML) > getmtime(PATHS_CSV)):
-            csvs.Csvs.main(self, PROJECT_YML)
+            pnlproj_lib.csvs.csvs(PROJECT_YML, CACHE_DIR)
         else:
             print(
                 "'{}' is newer than '{}', so not regenerating.".format(
                     PATHS_CSV, PROJECT_YML))
 
 
-import find
-find.Find.out = FIND_TXT
 @App.subcommand("find")
-class Find(find.Find):
-    """Finds all image files in the project directory."""
-
-    outdir = CACHE_DIR
+class Find(cli.Application):
+    """Finds all image files in the project directory and saves result to _pnlproj/findPaths.txt."""
 
     def main(self):
-        find.Find.main(self, PROJECT_YML.dirname)
+        find.Find.invoke(PROJECT_YML.dirname, out = FIND_TXT)
         from plumbum.cmd import du
         diskUsageG = float(du('-sb').split()[0])/1024.0/1024.0/1024.0
         with open(DU_CSV, 'w') as f:
@@ -142,41 +137,35 @@ class Find(find.Find):
         print("Made '{}'".format(DU_CSV))
 
 
-import diff
-@App.subcommand("diff")
-class Diff(diff.Diff):
-    """Lists the image files that are not accounted for in project.yml."""
-    out = DIFF_CSV
+@App.subcommand("extra")
+class Extra(cli.Application):
+    """Lists the extra image files that are not accounted for in project.yml."""
+
+    ls = cli.Flag(['-l', '--ls'], default=False, help="List extra files")
 
     def main(self):
-
-        # remove "diff" from argv so that we can call 'csvs' and 'find' without error
-        sys.argv = sys.argv[:-1]
-
-        Csvs.run(exit=False)
-
+        Csvs.invoke()
         if not FIND_TXT.exists():
-            Find.run(exit=False)
+            Find.invoke()
         else:
             print("'{}' already exists, using that to find unaccounted files (run 'pnlproj find' to update it).".format(FIND_TXT))
+        pnlproj_lib.extra.extra(PATHS_CSV, FIND_TXT, EXTRA_CSV, self.ls)
 
-        diff.Diff.main(self, PATHS_CSV, FIND_TXT)
 
 def heading(s):
     return s + '\n' + len(s) * '-'
 
-import pandas as pd
-@App.subcommand("st")
+@App.subcommand("status")
 class Summary(cli.Application):
+    """Prints a summary of the project disk usage."""
 
     def main(self):
-        Csvs.invoke()
-        diff.Diff.invoke(PATHS_CSV, FIND_TXT, out=DIFF_CSV)
+        Extra.invoke()
 
         pd.options.display.float_format = '{:,.2f}'.format
 
         paths = pd.read_csv(PATHS_CSV)
-        extraFiles = pd.read_csv(DIFF_CSV)
+        extraFiles = pd.read_csv(EXTRA_CSV)
         du = pd.read_csv(DU_CSV)
 
         agg = { 'path': 'count', 'sizeMB': 'sum'}
