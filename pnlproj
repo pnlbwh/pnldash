@@ -162,6 +162,34 @@ class Diff(diff.Diff):
 
         diff.Diff.main(self, PATHS_CSV, FIND_TXT)
 
+def heading(s):
+    return s + '\n' + len(s) * '-'
+
+import pandas as pd
+@App.subcommand("st")
+class Summary(cli.Application):
+
+    def main(self):
+        Csvs.invoke()
+        diff.Diff.invoke(PATHS_CSV, FIND_TXT, out=DIFF_CSV)
+
+        pd.options.display.float_format = '{:,.2f}'.format
+
+        paths = pd.read_csv(PATHS_CSV)
+        extraFiles = pd.read_csv(DIFF_CSV)
+        du = pd.read_csv(DU_CSV)
+
+        agg = { 'path': 'count', 'sizeMB': 'sum'}
+        st = paths.groupby(['pipelineId', 'exists']).agg(agg)
+        st['sizeMB'] = st['sizeMB']/1024.0/1024.0
+        st.rename(columns={'sizeMB':'size(G)', 'path':'count'}, inplace=True)
+        st.reset_index(level=st.index.names, inplace=True)
+        print(heading('Pipeline Files'))
+        print(st.to_string(index=False))
+        pipelineDiskUsage = paths['sizeMB'].sum() / 1024.0
+        print("total: {:.2f}G".format(pipelineDiskUsage))
+        totalDiskUsage = du['diskUsageG'].iloc[0]
+        print("directory size: {:.2f}G".format(totalDiskUsage))
 
 if __name__ == '__main__':
     CACHE_DIR.mkdir()

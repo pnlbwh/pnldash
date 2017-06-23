@@ -33,7 +33,7 @@ DT::datatable(SPACE_TABLE, options = list(bPaginate=F))%>% DT::formatRound(c('pr
 
 ```{r include=FALSE}
 params <- fread('params.csv')
-paths.grouped <- PATHS[,.( completed=sum(exists), missing=sum(not(exists)), total=.N, 'size (G)'=sum(sizeMB, na.rm=T)/1024, examplePath=head(path,n=1)), by=.(projectPath, pathKey, paramId)]
+paths.grouped <- PATHS[,.( completed=sum(exists), missing=sum(not(exists)), total=.N, 'size (G)'=sum(sizeMB, na.rm=T)/1024, examplePath=head(path,n=1)), by=.(projectPath, pathKey, pipelineId)]
 
 indentText <- function(text) {
   paste0("    ", gsub("\n", "\n    ", text))
@@ -42,8 +42,8 @@ indentText <- function(text) {
 summarizePipeline <- function(projectpath, projectSD) {
   pipelinesCol = projectSD[,
           {
-          paramid=paramId
-          paramCombo = params[projectPath==projectpath & paramId==paramid,]
+          paramid=pipelineId
+          paramCombo = params[projectPath==projectpath & pipelineId==paramid,]
           pipelineDescription = indentText(paramCombo[,pipelineDescription][1])
           setorder(paramCombo, param)
           paramTable = kable(paramCombo[,.(parameter=param, "parameter value"=paramValue)])
@@ -52,8 +52,8 @@ summarizePipeline <- function(projectpath, projectSD) {
           }
           pathsSummary = kable(.SD, digits=1)
           diskUsage = .SD[,sum(.SD$'size (G)')] %>% round(digits=1)
-          caselist = kable(unique(PATHS[projectPath==projectpath & paramId==paramid,caseid]))
-          knit_expand(text='### PIPELINE #{{paramId}} ({{diskUsage}}G)
+          caselist = kable(unique(PATHS[projectPath==projectpath & pipelineId==paramid,caseid]))
+          knit_expand(text='### PIPELINE #{{pipelineId}} ({{diskUsage}}G)
 #### Description
 {{pipelineDescription}}
 
@@ -66,7 +66,7 @@ summarizePipeline <- function(projectpath, projectSD) {
 #### Caselist
 {{caselist}}
 ')
-          }, by=.(paramId)][,V1]
+          }, by=.(pipelineId)][,V1]
 
   spaceTakenTable = SPACE_TABLE[projectPath==projectpath][,projectPath:=NULL]
   spaceTakenTable.html = kable(spaceTakenTable, align=c("l","l"), digits=1)

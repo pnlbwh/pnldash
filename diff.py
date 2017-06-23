@@ -24,6 +24,8 @@ class Diff(cli.Application):
         ['-o'],
         help='Output file')
 
+    ls = cli.Flag(['-l', '--ls'], default=False, help="List extra files")
+
     def main(self, pathsCsv, findtxt):
         paths = pd.read_csv(pathsCsv)
         if paths.empty:
@@ -33,21 +35,22 @@ class Diff(cli.Application):
             found_paths = f.read().splitlines()
         unaccounted_files = set(found_paths) - set(existing_paths)
         if unaccounted_files:
-            sys.stderr.write("Unaccounted files found:\n")
             with open(self.out, 'w') as f:
                 header = ['projectPath', 'path', 'sizeMB']
                 csvwriter = csv.writer(f)
                 csvwriter.writerow(header)
-                sys.stderr.write(', '.join(header) + '\n')
+                if self.ls:
+                    sys.stderr.write(', '.join(header) + '\n')
                 sizeMBsum = 0
                 for path in unaccounted_files:
                     sizeMB = getsize(path)
                     relativePath = local.path(path).relative_to(local.cwd)
                     row = [local.cwd, relativePath, sizeMB]
-                    sys.stderr.write(', '.join(map(str,row)) + '\n')
+                    if self.ls:
+                        sys.stderr.write(', '.join(map(str,row)) + '\n')
                     csvwriter.writerow(row)
                     sizeMBsum = sizeMBsum + sizeMB
-            print("{} unaccounted file(s) found, taking up {}G of disk space".format(len(unaccounted_files), sizeMBsum/1024.0))
+            print("{0} unaccounted file(s) found, disk usage: {1:.2f}G".format(len(unaccounted_files), sizeMBsum/1024.0))
         else:
             with open(self.out, 'w') as f:
                 pass # make empty file
