@@ -129,10 +129,15 @@ def heading(s):
 class Summary(cli.Application):
     """Prints a summary of the project disk usage."""
 
+    useCache = cli.Flag(['-c', '--cache'], default=False, help="Use cached paths.csv instead of regenerating it.")
+
     ls = cli.Flag(['-l', '--ls'], default=False, help="List extra image files not accounted for by pipelines")
 
     def main(self):
-        pnlproj_lib.csvs.csvs(PROJECT_YML, CACHE_DIR)
+        if not PATHS_CSV.exists() or not self.useCache:
+            pnlproj_lib.csvs.csvs(PROJECT_YML, CACHE_DIR)
+        else:
+            print("Using cached '{}'.".format(PATHS_CSV))
         if not FIND_TXT.exists():
             Find.invoke()
         else:
@@ -162,5 +167,4 @@ class Summary(cli.Application):
 
 if __name__ == '__main__':
     CACHE_DIR.mkdir()
-
     App.run()
