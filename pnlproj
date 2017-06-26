@@ -129,20 +129,19 @@ def heading(s):
 class Summary(cli.Application):
     """Prints a summary of the project disk usage."""
 
-    useCache = cli.Flag(['-c', '--cache'], default=False, help="Use cached paths.csv instead of regenerating it.")
+    useCache = cli.Flag(['-c', '--cache'], default=False, help="Use cached results instead of recomputing them.")
 
     ls = cli.Flag(['-l', '--ls'], default=False, help="List extra image files not accounted for by pipelines")
 
     def main(self):
-        if not PATHS_CSV.exists() or not self.useCache:
-            pnlproj_lib.csvs.csvs(PROJECT_YML, CACHE_DIR)
-        else:
-            print("Using cached '{}'.".format(PATHS_CSV))
+        pnlproj_lib.csvs.csvs(PROJECT_YML, CACHE_DIR, useCache=self.useCache)
+
         if not FIND_TXT.exists():
             Find.invoke()
         else:
             print("'{}' already exists, using that to find unaccounted files (run 'pnlproj find' to update it).".format(FIND_TXT))
-        pnlproj_lib.extra.extra(PATHS_CSV, FIND_TXT, EXTRA_CSV, self.ls)
+
+        pnlproj_lib.extra.extra(PATHS_CSV, FIND_TXT, CACHE_DIR, ls=self.ls, useCache=self.useCache)
         print
 
         pd.options.display.float_format = '{:,.2f}'.format
@@ -151,16 +150,20 @@ class Summary(cli.Application):
         extraFiles = pd.read_csv(EXTRA_CSV)
         du = pd.read_csv(DU_CSV)
 
-        agg = { 'path': 'count', 'sizeMB': 'sum'}
-        st = paths.groupby(['pipelineId', 'exists']).agg(agg)
+        agg = { 'path': 'count', 'sizeMB': 'sum', 'exists': 'sum'}
+        # agg = { 'path': 'count', 'sizeMB': 'sum', 'exists': np.count_nonzero}
+        st = paths.groupby(['pipelineId', 'pathKey']).agg(agg)
         st['sizeMB'] = st['sizeMB']/1024.0/1024.0
-        st.rename(columns={'sizeMB':'size(G)', 'path':'count'}, inplace=True)
-        st.reset_index(level=st.index.names, inplace=True)
+        # st.rename(columns={'sizeMB':'size(G)', 'path':'count'}, inplace=True)
+        # st.reset_index(level=st.index.names, inplace=True)
         print(heading('Pipeline Files'))
-        print(st.to_string(index=False))
+        # print(st.to_string(index=False))
+        print(st.to_string())
+
         pipelineDiskUsage = paths['sizeMB'].sum() / 1024.0
         print("disk usage (G): {:.2f}".format(pipelineDiskUsage))
         totalDiskUsage = du['diskUsageG'].iloc[0]
+
         print
         print(heading("Project Directory"))
         print("disk usage (G): {:.2f}".format(totalDiskUsage))

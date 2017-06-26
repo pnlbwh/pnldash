@@ -30,15 +30,20 @@ def readCaselist(caselist):
         raise Exception("caselist field must be string or list type")
 
 
-def csvs(projectyml, outdir):
+def csvs(projectyml, outdir, useCache=False):
+    paramsCsv = outdir / 'params.csv'
+    pathsCsv = outdir / 'paths.csv'
+
+    if useCache and pathsCsv.exists():
+        print("Using cached '{}'.".format(pathsCsv))
+        return
+
     with open(projectyml, 'r') as f:
         yml = yaml.load(f, Loader=yaml.loader.BaseLoader) # TODO force read each field as a string
 
     projectInfo = yml['projectInfo']
     projectPath = projectyml.dirname.replace('-', '/')
 
-    paramsCsv = outdir / 'params.csv'
-    pathsCsv = outdir / 'paths.csv'
 
     outdir.mkdir()
 
