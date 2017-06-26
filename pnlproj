@@ -57,7 +57,6 @@ pipelines:
 
 
 class App(cli.Application):
-
     def main(self, *args):
         if args:
             print("Unknown command {0!r}".format(args[0]))
@@ -74,7 +73,8 @@ class Init(cli.Application):
 
     def main(self):
         if local.path(PROJECT_YML).exists() and not self.force:
-            msg = "'{}' already exists, to recreate it delete it first or use --force flag.".format(PROJECT_YML)
+            msg = "'{}' already exists, to recreate it delete it first or use --force flag.".format(
+                PROJECT_YML)
             print(msg)
             sys.exit(1)
 
@@ -99,7 +99,8 @@ class Push(cli.Application):
                 PNL_PROJECTS_DB)
             raise Exception(errmsg)
 
-        destDir = local.path(centralRepo) / local.cwd.__str__().replace('/', '---')[3:]
+        destDir = local.path(centralRepo) / local.cwd.__str__().replace(
+            '/', '---')[3:]
         destDir.mkdir()
 
         files = ['project.yml', PATHS_CSV, PARAMS_CSV, EXTRA_CSV, DU_CSV]
@@ -113,9 +114,9 @@ class Find(cli.Application):
     """Finds all image files in the project directory and saves result to _pnlproj/findPaths.txt."""
 
     def main(self):
-        find.Find.invoke(PROJECT_YML.dirname, out = FIND_TXT)
+        find.Find.invoke(PROJECT_YML.dirname, out=FIND_TXT)
         from plumbum.cmd import du
-        diskUsageG = float(du('-sb').split()[0])/1024.0/1024.0/1024.0
+        diskUsageG = float(du('-sb').split()[0]) / 1024.0 / 1024.0 / 1024.0
         with open(DU_CSV, 'w') as f:
             f.write("projectPath,diskUsageG\n")
             f.write('"{}",{}'.format(PROJECT_YML.dirname, diskUsageG))
@@ -125,13 +126,20 @@ class Find(cli.Application):
 def heading(s):
     return s + '\n' + len(s) * '-'
 
+
 @App.subcommand("status")
 class Summary(cli.Application):
     """Prints a summary of the project disk usage."""
 
-    useCache = cli.Flag(['-c', '--cache'], default=False, help="Use cached results instead of recomputing them.")
+    useCache = cli.Flag(
+        ['-c', '--cache'],
+        default=False,
+        help="Use cached results instead of recomputing them.")
 
-    ls = cli.Flag(['-l', '--ls'], default=False, help="List extra image files not accounted for by pipelines")
+    ls = cli.Flag(
+        ['-l', '--ls'],
+        default=False,
+        help="List extra image files not accounted for by pipelines")
 
     def main(self):
         pnlproj_lib.csvs.csvs(PROJECT_YML, CACHE_DIR, useCache=self.useCache)
@@ -139,9 +147,13 @@ class Summary(cli.Application):
         if not FIND_TXT.exists():
             Find.invoke()
         else:
-            print("'{}' already exists, using that to find unaccounted files (run 'pnlproj find' to update it).".format(FIND_TXT))
+            print(
+                "'{}' already exists, using that to find unaccounted files (run 'pnlproj find' to update it).".format(
+                    FIND_TXT))
 
-        pnlproj_lib.extra.extra(PATHS_CSV, FIND_TXT, CACHE_DIR, ls=self.ls, useCache=self.useCache)
+        print
+        pnlproj_lib.extra.extra(
+            PATHS_CSV, FIND_TXT, CACHE_DIR, ls=self.ls, useCache=self.useCache)
         print
 
         pd.options.display.float_format = '{:,.2f}'.format
@@ -150,12 +162,15 @@ class Summary(cli.Application):
         extraFiles = pd.read_csv(EXTRA_CSV)
         du = pd.read_csv(DU_CSV)
 
-        agg = { 'path': 'count', 'sizeMB': 'sum', 'exists': 'sum'}
-        # agg = { 'path': 'count', 'sizeMB': 'sum', 'exists': np.count_nonzero}
+        from numpy import count_nonzero
+        # agg = {'path': 'count', 'sizeMB': 'sum', 'exists': 'sum'}
+        agg = {'sizeMB': {'sizeMB':'sum'},
+                'exists': {'exists': count_nonzero, 'missing': lambda x: count_nonzero(~x) },
+               'path': {'total': 'count'}
+                }
         st = paths.groupby(['pipelineId', 'pathKey']).agg(agg)
-        st['sizeMB'] = st['sizeMB']/1024.0/1024.0
-        # st.rename(columns={'sizeMB':'size(G)', 'path':'count'}, inplace=True)
-        # st.reset_index(level=st.index.names, inplace=True)
+        st['sizeMB'] = st['sizeMB'] / 1024.0 / 1024.0
+        st.rename(columns={'path':'total'}, inplace=True)
         print(heading('Pipeline Files'))
         # print(st.to_string(index=False))
         print(st.to_string())
@@ -167,6 +182,7 @@ class Summary(cli.Application):
         print
         print(heading("Project Directory"))
         print("disk usage (G): {:.2f}".format(totalDiskUsage))
+
 
 if __name__ == '__main__':
     CACHE_DIR.mkdir()
