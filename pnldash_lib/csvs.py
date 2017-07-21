@@ -44,7 +44,6 @@ def csvs(projectyml, outdir, useCache=False):
     projectInfo = yml['projectInfo']
     projectPath = projectyml.dirname.replace('-', '/')
 
-
     outdir.mkdir()
 
     with open(paramsCsv, 'w') as fparamsCsv:

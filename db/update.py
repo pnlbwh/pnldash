@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 from plumbum import cli, local
-from plumbum.cmd import pnlproj
+from plumbum.cmd import pnldash
 
 
 class App(cli.Application):
@@ -15,9 +15,9 @@ class App(cli.Application):
             print("Updating '{}'".format(projdir))
             with local.cwd(projdir):
                 if self.runFind:
-                    pnlproj('find')
-                pnlproj('status')
-                pnlproj('push')
+                    pnldash('find')
+                pnldash('status')
+                pnldash('push')
 
 
 if __name__ == '__main__':

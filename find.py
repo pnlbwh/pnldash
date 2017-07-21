@@ -10,7 +10,7 @@ def fileFilter(p):
     return any(ext in ''.join(p.suffixes) for ext in EXTS) and not p.islink()
 
 def dirFilter(d):
-    return not (d / 'project.yml').exists() and not d.islink()
+    return not (d / 'pnldash.yml').exists() and not d.islink()
 
 
 class Find(cli.Application):
@@ -18,7 +18,7 @@ class Find(cli.Application):
     out = cli.SwitchAttr(['-o'], mandatory=False, help='Output file')
 
     def main(self, rootPath):
-        # TODO don't traverse directories with project.yml in them
+        # TODO don't traverse directories with pnldash.yml in them
         paths = local.path(rootPath).walk(fileFilter, dirFilter)
         num = 0
         if self.out:

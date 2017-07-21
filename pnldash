@@ -8,13 +8,13 @@ from os.path import getmtime
 import os
 from plumbum.cmd import scp
 import pandas as pd
-import pnlproj_lib.csvs
-import pnlproj_lib.extra
+import pnldash_lib.csvs
+import pnldash_lib.extra
 import find
 
-PROJECT_YML = local.path('project.yml')
+PROJECT_YML = local.path('pnldash.yml')
 PNL_PROJECTS_DB = 'PNL_PROJECTS_DB'
-CACHE_DIR = local.path("_pnlproj")
+CACHE_DIR = local.path("_pnldash")
 PATHS_CSV = local.path(CACHE_DIR / "paths.csv")
 PARAMS_CSV = local.path(CACHE_DIR / "params.csv")
 FIND_TXT = local.path(CACHE_DIR / "findPaths.txt")
@@ -67,13 +67,13 @@ class App(cli.Application):
 
 @App.subcommand("init")
 class Init(cli.Application):
-    """Makes template 'project.yml'"""
+    """Makes template 'pnldash.yml'"""
 
     force = cli.Flag(['-f', '--force'], default=False, help='force overwrite')
 
     def main(self):
         if local.path(PROJECT_YML).exists() and not self.force:
-            msg = "'{}' already exists, to recreate it delete it first or use --force flag.".format(
+            msg = "'{}' already exists, to recreate it delete it first or use --force/-f flag.".format(
                 PROJECT_YML)
             print(msg)
             sys.exit(1)
@@ -88,7 +88,7 @@ class Init(cli.Application):
 
 @App.subcommand("push")
 class Push(cli.Application):
-    """Copies project.yml and _pnlproj/* to central project database"""
+    """Copies pnldash.yml and _pnldash/* to central project database"""
 
     def main(self):
 
@@ -103,7 +103,7 @@ class Push(cli.Application):
             '/', '---')[3:]
         destDir.mkdir()
 
-        files = ['project.yml', PATHS_CSV, PARAMS_CSV, EXTRA_CSV, DU_CSV]
+        files = [PROJECT_YML, PATHS_CSV, PARAMS_CSV, EXTRA_CSV, DU_CSV]
         for file in files:
             scp[file, destDir] & FG
             print("Copied '{}' to '{}'".format(file, destDir))
@@ -111,7 +111,7 @@ class Push(cli.Application):
 
 @App.subcommand("find")
 class Find(cli.Application):
-    """Finds all image files in the project directory and saves result to _pnlproj/findPaths.txt."""
+    """Finds all image files in the project directory and saves result to _pnldash/findPaths.txt."""
 
     def main(self):
         find.Find.invoke(PROJECT_YML.dirname, out=FIND_TXT)
@@ -142,17 +142,17 @@ class Summary(cli.Application):
         help="List extra image files not accounted for by pipelines")
 
     def main(self):
-        pnlproj_lib.csvs.csvs(PROJECT_YML, CACHE_DIR, useCache=self.useCache)
+        pnldash_lib.csvs.csvs(PROJECT_YML, CACHE_DIR, useCache=self.useCache)
 
         if not FIND_TXT.exists():
             Find.invoke()
         else:
             print(
-                "'{}' already exists, using that to find unaccounted files (run 'pnlproj find' to update it).".format(
+                "'{}' already exists, using that to find unaccounted files (run 'pnldash find' to update it).".format(
                     FIND_TXT))
 
         print
-        pnlproj_lib.extra.extra(
+        pnldash_lib.extra.extra(
             PATHS_CSV, FIND_TXT, CACHE_DIR, ls=self.ls, useCache=self.useCache)
         print
 
@@ -164,13 +164,19 @@ class Summary(cli.Application):
 
         from numpy import count_nonzero
         # agg = {'path': 'count', 'sizeMB': 'sum', 'exists': 'sum'}
-        agg = {'sizeMB': {'sizeMB':'sum'},
-                'exists': {'exists': count_nonzero, 'missing': lambda x: count_nonzero(~x) },
-               'path': {'total': 'count'}
+        # agg = {'sizeMB': {'sizeMB':'sum'},
+        #         'exists': {'exists': count_nonzero, 'missing': lambda x: count_nonzero(~x) },
+        #        'path': {'total': 'count'}
+        #         }
+        missing = lambda x: count_nonzero(~x)
+
+        agg = {'sizeMB': ['sum'],
+                'exists': [count_nonzero, missing],
+                'path': ['count']
                 }
         st = paths.groupby(['pipelineId', 'pathKey']).agg(agg)
         st['sizeMB'] = st['sizeMB'] / 1024.0 / 1024.0
-        st.rename(columns={'path':'total'}, inplace=True)
+        # st.rename(columns={'path':'total'}, inplace=True)
         print(heading('Pipeline Files'))
         # print(st.to_string(index=False))
         print(st.to_string())

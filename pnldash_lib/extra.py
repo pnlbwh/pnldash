@@ -46,6 +46,7 @@ def getExtra(pathsCsv, findCsv, cacheDir, useCache):
 def extra(pathsCsv, findCsv, cacheDir, ls=False, useCache=False):
     print(heading('Extra Image Files'))
     extraFiles = getExtra(pathsCsv, findCsv, cacheDir, useCache)
+    extraFiles.to_csv(cacheDir / 'diffPaths.csv')
 
     if not extraFiles.empty:
         sizeMBsum = extraFiles['sizeMB'].sum()
