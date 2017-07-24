@@ -7,8 +7,9 @@ import glob
 import time
 from util import getsize
 from pnldash_config import *
+from . import read_project_yml
 
-PARAM_HDR = ['projectPath', 'grantId', 'description', 'pipelineId',
+PARAM_HDR = ['projectPath', 'name', 'grantId', 'description', 'pipelineId',
              'pipelineDescription', 'param', 'paramValue']
 PATH_HDR = ['projectPath', 'pipelineId', 'pathKey', 'caseid', 'path', 'sizeMB',
             'modtime', 'modtimeStr', 'exists']
@@ -41,12 +42,7 @@ def make_csvs(useCache=False):
         print("Using cached '{}'.".format(PATHS_CSV))
         return
 
-    with open(PROJECT_YML, 'r') as f:
-        yml = yaml.load(
-            f, Loader=yaml.loader.
-            BaseLoader)  # TODO force read each field as a string
-
-    projectInfo = yml['projectInfo']
+    yml = read_project_yml()
     projectPath = PROJECT_YML.dirname.replace('-', '/')
 
     CACHE_DIR.mkdir()
@@ -61,8 +57,8 @@ def make_csvs(useCache=False):
             for pipelineId, pipeline in enumerate(yml['pipelines']):
                 for param, paramVal in pipeline['parameters'].items():
                     csvwriterParams.writerow(
-                        [projectPath, projectInfo['grantId'],
-                         projectInfo['description'], pipelineId,
+                        [projectPath, yml['name'], yml['grantId'],
+                         yml['description'], pipelineId,
                          pipeline['description'], param, paramVal])
                 caseids = readCaselist(pipeline['paths']['caselist'])
                 caseidString = pipeline['paths']['caseid']

@@ -1,7 +1,7 @@
 from plumbum import local
 CACHE_DIR = local.path(".pnldash")
 PROJECT_YML = local.path('pnldash.yml')
-PROJECTS_DB_ENV = 'PNL_PROJECTS_DB'
+PROJECTS_DB_ENV = 'PROJECTS_DB'
 PATHS_CSV = CACHE_DIR / "paths.csv"
 PARAMS_CSV = CACHE_DIR / "params.csv"
 FIND_TXT = CACHE_DIR / "all_image_files.txt"

@@ -13,9 +13,10 @@ import pnldash_lib.extra
 import pnldash_lib.find
 from os.path import exists
 from pnldash_config import *
+from pnldash_lib import read_project_yml, get_db_dir
 
 TEMPLATE = """\
-name:
+name: intrust_std
 grantId:
 description: |
             Meaning of path keys:
@@ -78,22 +79,20 @@ class Init(cli.Application):
 
 @App.subcommand("push")
 class Push(cli.Application):
-    """Copies pnldash.yml and _pnldash/* to central project database"""
+    """Copies pnldash.yml and .pnldash/* to central project database"""
 
     def main(self):
 
-        centralRepo = os.environ.get(PNL_PROJECTS_DB, None)
-
-        if not centralRepo:
-            errmsg = "Set '{}' environment variable first.".format(
-                PNL_PROJECTS_DB)
-            raise Exception(errmsg)
+        centralRepo = get_db_dir()
 
         destDir = local.path(centralRepo) / local.cwd.__str__().replace(
             '/', '---')[3:]
         destDir.mkdir()
 
         files = [PROJECT_YML, PATHS_CSV, PARAMS_CSV, EXTRA_CSV, DU_CSV]
+        # ymlpath = destDir / read_project_yml()['name'] + '.yml'
+        # scp[PROJECT_YML, ymlpath] & FG
+        # print("Copied '{}' to '{}'".format(PROJECT_YML, ymlpath))
         for file in files:
             scp[file, destDir] & FG
             print("Copied '{}' to '{}'".format(file, destDir))
@@ -167,6 +166,8 @@ class Status(cli.Application):
 
 if __name__ == '__main__':
     import pnldash_lib.find
+    import pnldash_lib.env
     App.subcommand("find", pnldash_lib.find.Find)
+    App.subcommand("env", pnldash_lib.env.Env)
     CACHE_DIR.mkdir()
     App.run()

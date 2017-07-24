@@ -9,11 +9,11 @@ from util import getsize
 from pnldash_config import *
 
 
-def heading(s):
+def _heading(s):
     return s + '\n' + len(s) * '-'
 
 
-def relativePath(p):
+def _relativePath(p):
     return local.path(p).relative_to(local.cwd)
 
 
@@ -24,7 +24,7 @@ def _computeExtra():
     existing_paths = [local.path(p) for p in paths[paths.exists]['path']]
     with open(FIND_TXT, 'r') as f:
         found_paths = f.read().splitlines()
-    extraFiles = [str(relativePath(p))
+    extraFiles = [str(_relativePath(p))
                   for p in set(found_paths) - set(existing_paths)]
     sizes = map(getsize, extraFiles)
     df = pd.DataFrame({'projectPath': local.cwd,
@@ -43,7 +43,7 @@ def _getExtra(useCache):
 
 
 def make_extra(ls=False, useCache=False):
-    print(heading('Extra Image Files'))
+    print(_heading('Extra Image Files'))
     extraFiles = _getExtra(useCache)
 
     if not extraFiles.empty:
