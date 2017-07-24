@@ -11,6 +11,8 @@ import pandas as pd
 import pnldash_lib.csvs
 import pnldash_lib.extra
 import find
+from os.path import exists
+import pnldash_config
 
 PROJECT_YML = local.path('pnldash.yml')
 PNL_PROJECTS_DB = 'PNL_PROJECTS_DB'
@@ -23,14 +25,14 @@ EXTRA_CSV = local.path(CACHE_DIR / "diffPaths.csv")
 FIND_EXTS = ['.nrrd', '.nii.gz', '.nii', '.vtk', '.nhdr', '.mgz']
 
 TEMPLATE = """\
-projectInfo:
-    grantId:
-    description: |
-                 Meaning of path keys:
-                 fs - freesurfer subject directory
-                 dwied: eddy corrected DWI
-                 dwimask: FSL bet generated DWI mask
-                 etc.
+name:
+grantId:
+description: |
+            Meaning of path keys:
+            fs:      freesurfer subject directory
+            dwied:   eddy corrected DWI
+            dwimask: FSL bet generated DWI mask
+            etc.
 pipelines:
     - parameters:
         version_FreeSurfer: 5.3.0
@@ -64,7 +66,6 @@ class App(cli.Application):
         if self.nested_command:
             return
 
-
 @App.subcommand("init")
 class Init(cli.Application):
     """Makes template 'pnldash.yml'"""
@@ -72,7 +73,7 @@ class Init(cli.Application):
     force = cli.Flag(['-f', '--force'], default=False, help='force overwrite')
 
     def main(self):
-        if local.path(PROJECT_YML).exists() and not self.force:
+        if exists(PROJECT_YML) and not self.force:
             msg = "'{}' already exists, to recreate it delete it first or use --force/-f flag.".format(
                 PROJECT_YML)
             print(msg)
@@ -84,7 +85,6 @@ class Init(cli.Application):
         with open(PROJECT_YML, 'w') as f:
             f.write(TEMPLATE)
         print("Made template '{}'.".format(PROJECT_YML))
-
 
 @App.subcommand("push")
 class Push(cli.Application):
@@ -107,20 +107,6 @@ class Push(cli.Application):
         for file in files:
             scp[file, destDir] & FG
             print("Copied '{}' to '{}'".format(file, destDir))
-
-
-@App.subcommand("find")
-class Find(cli.Application):
-    """Finds all image files in the project directory and saves result to _pnldash/findPaths.txt."""
-
-    def main(self):
-        find.Find.invoke(PROJECT_YML.dirname, out=FIND_TXT)
-        from plumbum.cmd import du
-        diskUsageG = float(du('-sb').split()[0]) / 1024.0 / 1024.0 / 1024.0
-        with open(DU_CSV, 'w') as f:
-            f.write("projectPath,diskUsageG\n")
-            f.write('"{}",{}'.format(PROJECT_YML.dirname, diskUsageG))
-        print("Made '{}'".format(DU_CSV))
 
 
 def heading(s):
@@ -191,5 +177,7 @@ class Summary(cli.Application):
 
 
 if __name__ == '__main__':
+    import pnldash_lib.find
+    App.subcommand("find", pnldash_lib.find.Find)
     CACHE_DIR.mkdir()
     App.run()
