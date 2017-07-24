@@ -6,8 +6,7 @@ import pandas as pd
 import csv
 import os
 from util import getsize
-
-EXTRA_CSV = 'extra.csv'
+from pnldash_config import *
 
 
 def heading(s):
@@ -18,13 +17,12 @@ def relativePath(p):
     return local.path(p).relative_to(local.cwd)
 
 
-def computeExtra(pathsCsv, findCsv, cacheDir):
-    outCsv = cacheDir / EXTRA_CSV
-    paths = pd.read_csv(pathsCsv)
+def _computeExtra():
+    paths = pd.read_csv(PATHS_CSV.__str__())
     if paths.empty:
-        raise Exception("'{}' is empty".format(pathsCsv))
+        raise Exception("'{}' is empty".format(PATHS_CSV))
     existing_paths = [local.path(p) for p in paths[paths.exists]['path']]
-    with open(findCsv, 'r') as f:
+    with open(FIND_TXT, 'r') as f:
         found_paths = f.read().splitlines()
     extraFiles = [str(relativePath(p))
                   for p in set(found_paths) - set(existing_paths)]
@@ -35,18 +33,18 @@ def computeExtra(pathsCsv, findCsv, cacheDir):
     return df
 
 
-def getExtra(pathsCsv, findCsv, cacheDir, useCache):
-    outCsv = cacheDir / EXTRA_CSV
-    if useCache and outCsv.exists():
-        print("Using cached '{}'.".format(outCsv))
-        return pd.read_csv(outCsv)
-    return computeExtra(pathsCsv, findCsv, cacheDir)
+def _getExtra(useCache):
+    if useCache and EXTRA_CSV.exists():
+        print("Using cached '{}'.".format(EXTRA_CSV))
+        return pd.read_csv(EXTRA_CSV.__str__())
+    df = _computeExtra()
+    df.to_csv(EXTRA_CSV)
+    return df
 
 
-def extra(pathsCsv, findCsv, cacheDir, ls=False, useCache=False):
+def make_extra(ls=False, useCache=False):
     print(heading('Extra Image Files'))
-    extraFiles = getExtra(pathsCsv, findCsv, cacheDir, useCache)
-    extraFiles.to_csv(cacheDir / 'diffPaths.csv')
+    extraFiles = _getExtra(useCache)
 
     if not extraFiles.empty:
         sizeMBsum = extraFiles['sizeMB'].sum()
