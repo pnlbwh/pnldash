@@ -168,6 +168,6 @@ if __name__ == '__main__':
     import pnldash_lib.find
     import pnldash_lib.env
     App.subcommand("find", pnldash_lib.find.Find)
-    App.subcommand("env", pnldash_lib.env.Env)
+    App.subcommand("db", pnldash_lib.env.Db)
     CACHE_DIR.mkdir()
     App.run()
