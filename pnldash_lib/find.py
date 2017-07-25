@@ -34,6 +34,7 @@ def _make_du():
 
 def make_find(echo=False, useCache=True):
     if useCache and config.FIND_TXT.exists() and config.DU_CSV.exists():
+        _print("Using cached file: {}".format(config.FIND_TXT))
         return
     paths = local.cwd.walk(_fileFilter, _dirFilter)
     num = 0
