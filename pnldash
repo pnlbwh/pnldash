@@ -155,7 +155,7 @@ class Status(cli.Application):
                'exists': [count_nonzero, missing],
                'path': ['count']}
         st = paths_table.groupby(['pipelineId', 'pathKey']).agg(agg)
-        st['sizeMB'] = st['sizeMB'] / 1024.0 / 1024.0
+        st['sizeG'] = st['sizeMB'] / 1024.0
         # st.rename(columns={'path':'total'}, inplace=True)
         print(heading('Pipeline Files'))
         # print(st.to_string(index=False))
