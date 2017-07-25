@@ -11,7 +11,7 @@ PROJECT_YML = local.path(config.PROJECT_YML)
 
 
 def fileFilter(p):
-    return any(ext in ''.join(p.suffixes) for ext in EXTS) and not p.islink()
+    return any(p.endswith(ext) for ext in EXTS) and not p.islink()
 
 
 def dirFilter(d):
@@ -44,21 +44,5 @@ def _make_find(echo_files):
             num = num + 1
             if echo_files:
                 print(path)
-    _print("Found {} files with extensions: {}".format(num, ', '.join(EXTS)))
+    _print("Found {} file(s) with extensions: {}".format(num, ', '.join(EXTS)))
     _print("Made '{}".format(config.FIND_TXT))
-
-
-class Find(cli.Application):
-
-    echo = cli.Flag(
-        ['-e', '--echo'], default=False, help="Print files to stdout as well")
-
-    def main(self):
-        config.CACHE_DIR.mkdir()
-        _make_find(self.echo)
-        print('')
-        _make_du()
-
-
-if __name__ == '__main__':
-    Find.run()

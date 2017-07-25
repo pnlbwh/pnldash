@@ -87,9 +87,5 @@ def make_csvs(useCache=False):
                             csvwriterPaths.writerow(
                                 [projectPath, pipelineId, pathKey, caseid,
                                  path, sizeMB, mtime, mtimeStr, exists])
-        print("Made '{}'".format(paramsCsv))
-        print("Made '{}'".format(pathsCsv))
-
-
-if __name__ == '__main__':
-    Csvs.run()
+        # print("Made '{}'".format(paramsCsv))
+        # print("Made '{}'".format(pathsCsv))

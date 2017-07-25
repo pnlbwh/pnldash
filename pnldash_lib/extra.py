@@ -27,7 +27,7 @@ def _computeExtra():
     extraFiles = [str(_relativePath(p))
                   for p in set(found_paths) - set(existing_paths)]
     sizes = map(getsize, extraFiles)
-    df = pd.DataFrame({'projectPath': local.cwd,
+    df = pd.DataFrame({'projectPath': str(local.cwd),
                        'path': extraFiles,
                        'sizeMB': sizes, })
     return df
@@ -38,7 +38,7 @@ def _getExtra(useCache):
         print("Using cached '{}'.".format(EXTRA_CSV))
         return pd.read_csv(EXTRA_CSV.__str__())
     df = _computeExtra()
-    df.to_csv(EXTRA_CSV)
+    df.to_csv(str(EXTRA_CSV), index=False)
     return df
 
 

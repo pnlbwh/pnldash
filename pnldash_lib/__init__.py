@@ -3,13 +3,6 @@ import yaml
 from pnldash_config import PROJECT_YML, PROJECTS_DB_ENV
 import os
 
-def get_db_dir():
-    centralRepo = os.environ.get(PROJECTS_DB_ENV, None)
-    if not centralRepo:
-        errmsg = "Set '{}' environment variable first.".format(
-            PROJECTS_DB_ENV)
-        raise Exception(errmsg)
-    return local.path(centralRepo)
 
 def read_yml(ymlfile):
     with open(ymlfile, 'r') as f:

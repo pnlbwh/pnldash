@@ -1,0 +1,127 @@
+#!/usr/bin/env python
+
+from plumbum import cli, local, FG
+from pnldash_lib import read_project_yml, read_yml
+import pnldash_config as config
+from pnldash_config import *
+import pandas as pd
+from pprint import pprint
+import pnldash_lib.db as db
+
+
+def _stack_csvs(csvs, out):
+    if not csvs:
+        raise Exception("Expect at least one csv")
+    if not all(csv.exists() for csv in csvs):
+        print csvs
+        raise Exception("Not all csvs exist")
+    dfs = [pd.read_csv(csv) for csv in csvs]
+    pd.concat(dfs).to_csv(str(out), index=False)
+    print("Made '{}'".format(out))
+
+
+class App(cli.Application):
+    def main(self, *args):
+        if args:
+            print("Unknown command {0!r}".format(args[0]))
+            return 1
+        if not self.nested_command:
+            print("No command given")
+            return 1  # error exit code
+
+
+@App.subcommand("make")
+class Make(cli.Application):
+    """Make HTML dashboard report."""
+
+    def main(self, *args):
+        dbdir = db.dbdir()
+        PROJECT_YML = config.PROJECT_YML.name
+        projectdirs = [d for d in dbdir.list() if d.is_dir() and (d / PROJECT_YML).exists()]
+
+        pathcsvs = [pd / (PATHS_CSV.name) for pd in projectdirs]
+        paramcsvs = [pd / (PARAMS_CSV.name) for pd in projectdirs]
+        extracsvs = [pd / (EXTRA_CSV.name) for pd in projectdirs]
+        ducsvs = [pd / (DU_CSV.name) for pd in projectdirs]
+        tmpdir = local.path(__file__).dirname / '_data'
+        _stack_csvs(pathcsvs, tmpdir / 'paths.csv')
+        _stack_csvs(paramcsvs, tmpdir / 'params.csv')
+        _stack_csvs(extracsvs, tmpdir / 'diffPaths.csv')
+        _stack_csvs(ducsvs, tmpdir / 'du.csv')
+
+        from plumbum.cmd import R
+        thisdir = local.path(__file__).dirname
+        print("Make dashboard")
+        R['-e', "library('rmarkdown'); setwd('{}'); render('pnldashboard.Rmd', output_dir='{}')".format(thisdir, local.cwd)] & FG
+
+
+@App.subcommand("update")
+class Update(cli.Application):
+    """Update the central project database."""
+
+    find = cli.SwitchAttr(
+        ['--find'],
+        help='Crawl project directories for image files instead of using previously cached result')
+
+    def main(self, *args):
+        from plumbum.cmd import pnldash
+        dbdir = db.dbdir()
+        projectdirs = db.get_project_dirs()
+        for projectdir in projectdirs:
+            print("Updating '{}'".format(projectdir))
+            with local.cwd(projectdir):
+                if self.find:
+                    pnldash('find')
+                pnldash('status')
+                pnldash('push')
+
+
+@App.subcommand("env")
+class Env(cli.Application):
+    """Print the bash environment setup for a project's data paths."""
+
+    paramid = cli.SwitchAttr(
+        ['-p', '--paramid'],
+        int,
+        default=0,
+        help="The index of the pipeline whose paths you want")
+
+    #TODO make unset option?
+
+    def main(self, name):
+
+        # TODO be able to select projects with same names
+        projectdir, yml = db.get_projects(name)[0]
+
+        print("export root={}".format(projectdir))
+        paths = yml['pipelines'][self.paramid]['paths']
+        for key, path in paths.items():
+            print("export {}={}".format(key, path))
+
+
+@App.subcommand("ls")
+class Ls(cli.Application):
+    """List the project names in the central database"""
+
+    def main(self):
+        for projectdir, yml in db.get_projects():
+            numpipelines = len(yml['pipelines'])
+            print(yml['name'] + " ({}) ({} pipeline(s))".format(projectdir, numpipelines))
+
+
+@App.subcommand("show")
+class Show(cli.Application):
+    """Show the project.yml contents for a project."""
+
+    def main(self, name):
+        # TODO be able to select projects with same names
+        projectdir, yml = db.get_projects(name)[0]
+        print("# {} ({})".format(yml['name'], projectdir))
+        print
+        print("## Description\n")
+        print(yml['description'])
+        print("## Pipelines\n")
+        pprint(yml['pipelines'])
+
+if __name__ == '__main__':
+    App.run()

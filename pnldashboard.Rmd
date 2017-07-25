@@ -1,0 +1,112 @@
+---
+title: "Flexdashboard"
+output:
+  flexdashboard::flex_dashboard:
+      navbar:
+      - { title: "PNL Project Dashboard Test", align: right }
+      source_code: embed
+      orientation: columns
+always_allow_html: yes
+---
+
+```{r setup, include=FALSE}
+library(data.table)
+library(DT)
+library(magrittr)
+library(flexdashboard)
+library(knitr)
+```
+
+Overview
+=====================================
+
+```{r}
+PATHS <- fread("_data/paths.csv")
+diffPaths <- fread("_data/diffPaths.csv")
+DU <- fread("_data/du.csv")
+#TODO handle empty project paths
+paths.byProject = PATHS[PATHS[,exists] & ! path %like% '\\.\\./.*', .('project files (G)'=sum(sizeMB)/1024),by=projectPath]
+diffPaths.byProject = diffPaths[,.('extra files (G)'=sum(sizeMB)/1024), by=projectPath]
+SPACE_TABLE.a = merge(paths.byProject, diffPaths.byProject, by="projectPath")
+SPACE_TABLE = merge(SPACE_TABLE.a, DU, by="projectPath")[,'total directory size (G)':=diskUsageG][,diskUsageG:=NULL]
+DT::datatable(SPACE_TABLE, options = list(bPaginate=F)) %>% DT::formatRound(c('project files (G)', 'extra files (G)', 'total directory size (G)'), 2)
+```
+
+```{r include=FALSE}
+params <- fread('_data/params.csv')
+paths.grouped <- PATHS[,.( completed=sum(exists), missing=sum(not(exists)), total=.N, 'size (G)'=sum(sizeMB, na.rm=T)/1024, examplePath=head(path,n=1)), by=.(projectPath, pathKey, pipelineId)]
+
+indentText <- function(text) {
+  paste0("    ", gsub("\n", "\n    ", text))
+}
+
+summarizePipeline <- function(projectpath, projectSD) {
+  pipelinesCol = projectSD[,
+          {
+          paramid=pipelineId
+          paramCombo = params[projectPath==projectpath & pipelineId==paramid,]
+          pipelineDescription = indentText(paramCombo[,pipelineDescription][1])
+          setorder(paramCombo, param)
+          paramTable = kable(paramCombo[,.(parameter=param, "parameter value"=paramValue)])
+          if (nrow(paramCombo) == 0) {
+            paramTable = "None given."
+          }
+          pathsSummary = kable(.SD, digits=1)
+          diskUsage = .SD[,sum(.SD$'size (G)')] %>% round(digits=1)
+          caselist = kable(unique(PATHS[projectPath==projectpath & pipelineId==paramid,caseid]))
+          knit_expand(text='### PIPELINE #{{pipelineId}} ({{diskUsage}}G)
+#### Description
+{{pipelineDescription}}
+
+#### Parameters
+{{paramTable}}
+
+#### Output Paths
+{{pathsSummary}}
+
+#### Caselist
+{{caselist}}
+')
+          }, by=.(pipelineId)][,V1]
+
+  spaceTakenTable = SPACE_TABLE[projectPath==projectpath][,projectPath:=NULL]
+  spaceTakenTable.html = kable(spaceTakenTable, align=c("l","l"), digits=1)
+  diskUsage = spaceTakenTable[,.SD$'project files (G)'] %>% round(digits=1)
+  pageHeader = knit_expand(text='# {{projectpath}} ({{diskUsage}}G) {data-navmenu="Projects"}')
+  # Add leading 4 spaces to make description a markdown quotation block, hence preserving its formatting
+  projectDescription = indentText(params[projectPath==projectpath,description][1])
+  colSep = "--------------"
+  #spaceTakenTable = table[projectPath==projectpath][,projectPath:=NULL] %>% DT::formatRound(c('project files (G)', 'extra files (G)'), 1)
+  overviewCol = c("Col1", colSep, knit_expand(text="### {{projectpath}}"), "", "#### Description", projectDescription, "#### Disk space", spaceTakenTable.html)
+  c(pageHeader, overviewCol, "  ", "Col2 {.tabset}  ", colSep, pipelinesCol)
+}
+
+out = paths.grouped[,
+  {
+  summarizePipeline(projectPath, .SD)
+  }
+  , by=.(projectPath)][,V1]
+
+```
+
+`r paste(out, collapse = '\n')`
+
+
+<!-- All Project Files -->
+<!-- ===================================== -->
+
+<!-- ```{r} -->
+<!-- d <- fread("paths.csv")[1:1000][,modtime:=modtimeStr][,modtimeStr:=NULL] -->
+<!-- setorder(d, -exists, -sizeMB) -->
+<!-- DT::datatable(d, filter = 'top', options = list(bPaginate=F)) %>% formatRound('sizeMB', 1) -->
+<!-- ``` -->
+
+
+<!-- All Extra Files -->
+<!-- ===================================== -->
+
+<!-- ```{r} -->
+<!-- d <- fread("diffPaths.csv") -->
+<!-- setorder(d, -sizeMB) -->
+<!-- DT::datatable(d, options = list(bPaginate=F)) %>% formatRound('sizeMB', 1) -->
+<!-- ``` -->
