@@ -3,6 +3,7 @@ from plumbum import cli, local
 from pnldash_lib import read_project_yml
 import sys
 from pnldash_lib.csvs import readCaselist
+import glob
 
 def _print(s=''):
     print(s, file=sys.stderr)
@@ -56,6 +57,8 @@ class Ls(cli.Application):
         yml = read_project_yml()
 
         for paramid, pipeline in enumerate(yml['pipelines']):
+            if self.paramid != paramid:
+                continue
             caseids = readCaselist(pipeline['paths']['caselist'])
             combo = {k:v for (k,v) in pipeline['parameters'].items() \
                      if k not in ['caseid', 'caselist']}
@@ -68,13 +71,15 @@ class Ls(cli.Application):
             template_path = pipeline['paths'][tag]
             placeholder = pipeline['paths']['caseid']
             for caseid in caseids:
-                path = template_path.replace(placeholder, caseid)
-                path = local.path(path)
-                if self.print_missing == path.exists() and not self.print_all:
-                    continue
-                if self.print_caseid_only:
-                    print('{}'.format(caseid))
-                    return
-                if self.print_csv:
-                    sys.stdout.write('{},'.format(caseid))
-                print(path)
+                globpath = template_path.replace(placeholder, caseid)
+                paths = glob.glob(globpath)
+                for path in paths:
+                    path = local.path(path)
+                    if self.print_missing == path.exists() and not self.print_all:
+                        continue
+                    if self.print_caseid_only:
+                        print('{}'.format(caseid))
+                        return
+                    if self.print_csv:
+                        sys.stdout.write('{},'.format(caseid))
+                    print(path)
