@@ -87,7 +87,6 @@ class Push(cli.Application):
     def main(self):
 
         make_extra()
-        make_find(echo=False, useCache=True)
         dbdir = get_db_dir()
         destDir = local.path(dbdir) / local.cwd.__str__().replace('/',
                                                                   '---')[3:]
@@ -172,4 +171,6 @@ class Status(cli.Application):
 
 if __name__ == '__main__':
     CACHE_DIR.mkdir()
+    import pnldash_lib.ls
+    App.subcommand("ls", pnldash_lib.ls.Ls)
     App.run()

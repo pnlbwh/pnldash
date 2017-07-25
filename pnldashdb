@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+import sys
 from plumbum import cli, local, FG
 from pnldash_lib import read_project_yml, read_yml
 import pnldash_config as config
@@ -74,6 +75,12 @@ class Update(cli.Application):
                     pnldash('find')
                 pnldash('status')
                 pnldash('push')
+def _print_map(d, prepend='', keys=None, fd=sys.stderr):
+    if not keys:
+        keys = d.keys()
+    for k in keys:
+        fd.write("{}{:<25} {:<15}".format(prepend, k, d[k]) + '\n')
+
 
 
 @App.subcommand("env")
@@ -95,6 +102,10 @@ class Env(cli.Application):
         # TODO be able to select projects with same names
         projectdir, yml = db.get_projects(name)[0]
 
+        print("# param id #{} (there are a total of {} pipeline(s))".format(self.paramid,
+                                                len(yml['pipelines'])))
+        _print_map(yml['pipelines'][self.paramid]['parameters'], prepend='# ')
+        print('')
         print("export root={}".format(projectdir))
         paths = yml['pipelines'][self.paramid]['paths']
         for key, path in paths.items():
@@ -103,8 +114,8 @@ class Env(cli.Application):
             print("export {}={}".format(key, escape(path)))
 
 
-@App.subcommand("ls")
-class Ls(cli.Application):
+@App.subcommand("list")
+class List(cli.Application):
     """List the project names in the central database"""
 
     def main(self):
@@ -123,7 +134,7 @@ class Show(cli.Application):
         print("# {} ({})".format(yml['name'], projectdir))
         print
         print("## Description\n")
-        print(yml['description'])
+        print(yml['description\n'])
         print("## Pipelines\n")
         pprint(yml['pipelines'])
 
