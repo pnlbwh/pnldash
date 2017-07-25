@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+from __future__ import print_function
 from plumbum import cli, local
 import sys
 import pandas as pd
@@ -7,6 +8,8 @@ import csv
 import os
 from util import getsize
 from pnldash_config import *
+from .find import make_find
+from .csvs import make_csvs
 
 
 def _heading(s):
@@ -17,7 +20,7 @@ def _relativePath(p):
     return local.path(p).relative_to(local.cwd)
 
 
-def _computeExtra():
+def _compute_extra_table():
     paths = pd.read_csv(PATHS_CSV.__str__())
     if paths.empty:
         raise Exception("'{}' is empty".format(PATHS_CSV))
@@ -33,25 +36,19 @@ def _computeExtra():
     return df
 
 
-def _getExtra(useCache):
-    if useCache and EXTRA_CSV.exists():
-        print("Using cached '{}'.".format(EXTRA_CSV))
+def make_extra(useCache=True):
+    if not FIND_TXT.exists():
+        make_find()
+    if not PATHS_CSV.exists():
+        make_csvs()
+    extra_modtime = os.path.getmtime(str(EXTRA_CSV))
+    find_modtime = os.path.getmtime(str(FIND_TXT))
+    paths_modtime = os.path.getmtime(str(PATHS_CSV))
+    if useCache and EXTRA_CSV.exists() \
+       and extra_modtime > find_modtime \
+       and extra_modtime > paths_modtime:
+        print("Using cached '{}'.".format(EXTRA_CSV), file=sys.stderr)
         return pd.read_csv(EXTRA_CSV.__str__())
-    df = _computeExtra()
+    df = _compute_extra_table()
     df.to_csv(str(EXTRA_CSV), index=False)
     return df
-
-
-def make_extra(ls=False, useCache=False):
-    print(_heading('Extra Image Files'))
-    extraFiles = _getExtra(useCache)
-
-    if not extraFiles.empty:
-        sizeMBsum = extraFiles['sizeMB'].sum()
-        if ls:
-            pd.options.display.float_format = '{:,.2f}'.format
-            print(extraFiles.to_string(index=False))
-        print("{} unaccounted file(s) found.".format(len(extraFiles['path'])))
-        print("disk usage (G): {:.2f}".format(sizeMBsum / 1024.0))
-    else:
-        print("No unaccounted files found")

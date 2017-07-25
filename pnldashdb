@@ -35,7 +35,7 @@ class Make(cli.Application):
     """Make HTML dashboard report."""
 
     def main(self, *args):
-        dbdir = db.dbdir()
+        dbdir = db.get_db_dir()
         PROJECT_YML = config.PROJECT_YML.name
         projectdirs = [d for d in dbdir.list() if d.is_dir() and (d / PROJECT_YML).exists()]
 
@@ -65,7 +65,7 @@ class Update(cli.Application):
 
     def main(self, *args):
         from plumbum.cmd import pnldash
-        dbdir = db.dbdir()
+        dbdir = db.get_db_dir()
         projectdirs = db.get_project_dirs()
         for projectdir in projectdirs:
             print("Updating '{}'".format(projectdir))

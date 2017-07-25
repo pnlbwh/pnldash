@@ -22,7 +22,7 @@ def _print(s):
     print(s, file=sys.stderr)
 
 
-def _make_du():
+def make_du():
     from plumbum.cmd import du
     diskUsageG = float(du('-sb').split()[0]) / 1024.0 / 1024.0 / 1024.0
     header = ["projectPath", "diskUsageG"]
@@ -34,15 +34,16 @@ def _make_du():
     _print("Made '{}'".format(config.DU_CSV))
 
 
-def _make_find(echo_files):
-    # TODO don't traverse directories with pnldash.yml in them
+def make_find(echo=False, cache=False):
+    if cache and config.FIND_TXT.exists():
+        return
     paths = local.cwd.walk(fileFilter, dirFilter)
     num = 0
     with open(config.FIND_TXT, 'w') as f:
         for path in paths:
             f.write(path + '\n')
             num = num + 1
-            if echo_files:
+            if echo:
                 print(path)
     _print("Found {} file(s) with extensions: {}".format(num, ', '.join(EXTS)))
     _print("Made '{}".format(config.FIND_TXT))

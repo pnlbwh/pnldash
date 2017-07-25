@@ -8,9 +8,7 @@ from os.path import getmtime
 import os
 from plumbum.cmd import scp
 import pandas as pd
-import pnldash_lib.csvs
-import pnldash_lib.extra
-import pnldash_lib.find
+from pnldash_lib import *
 from pnldash_config import *
 from os.path import exists
 
@@ -85,17 +83,13 @@ class Push(cli.Application):
 
     def main(self):
 
-        centralRepo = get_db_dir()
-
-        destDir = local.path(centralRepo) / local.cwd.__str__().replace(
-            '/', '---')[3:]
+        make_extra(useCache=True)
+        dbdir = get_db_dir()
+        destDir = local.path(dbdir) / local.cwd.__str__().replace('/',
+                                                                  '---')[3:]
         destDir.mkdir()
 
-        files = [PROJECT_YML, PATHS_CSV, PARAMS_CSV, EXTRA_CSV, DU_CSV]
-        # ymlpath = destDir / read_project_yml()['name'] + '.yml'
-        # scp[PROJECT_YML, ymlpath] & FG
-        # print("Copied '{}' to '{}'".format(PROJECT_YML, ymlpath))
-        for file in files:
+        for file in [PROJECT_YML, PATHS_CSV, PARAMS_CSV, EXTRA_CSV, DU_CSV]:
             scp[file, destDir] & FG
             print("Copied '{}' to '{}'".format(file, destDir))
 
@@ -112,8 +106,17 @@ class Find(cli.Application):
 
     def main(self):
         CACHE_DIR.mkdir()
-        pnldash_lib.find._make_find(self.echo)
-        pnldash_lib.find._make_du()
+        make_find(self.echo)
+        make_du()
+
+
+@App.subcommand("extra")
+class Extra(cli.Application):
+    """Prints unaccounted files."""
+
+    def main(self):
+        dfextra = make_extra(useCache=True)
+        print('\n'.join(dfextra['path'].values))
 
 
 @App.subcommand("status")
@@ -125,31 +128,26 @@ class Status(cli.Application):
         default=False,
         help="Use cached results instead of recomputing them.")
 
-    ls = cli.Flag(
-        ['-l', '--ls'],
-        default=False,
-        help="List extra image files not accounted for by pipelines")
+    # ls = cli.Flag(
+    #     ['-l', '--ls'],
+    #     default=False,
+    #     help="List extra image files not accounted for by pipelines")
 
     def main(self):
-        pnldash_lib.csvs.make_csvs(useCache=self.cache)
-
-        if not FIND_TXT.exists():
-            Find.invoke()
-        else:
-            print(
-                "'{}' already exists, using that to find unaccounted files (run 'pnldash find' to update it).".format(
-                    FIND_TXT.relative_to(local.cwd)))
-
-        print
-        pnldash_lib.extra.make_extra(ls=self.ls, useCache=self.cache)
-        print
-
         pd.options.display.float_format = '{:,.2f}'.format
 
-        paths = pd.read_csv(PATHS_CSV)
-        extraFiles = pd.read_csv(EXTRA_CSV)
-        du = pd.read_csv(DU_CSV)
+        extra_table = make_extra(self.cache)
+        print(heading('Extra Image Files'))
+        if not extra_table.empty:
+            sizeMBsum = extra_table['sizeMB'].sum()
+            print("{} unaccounted file(s) found.".format(
+                len(extra_table['path'])))
+            print("disk usage (G): {:.2f}".format(sizeMBsum / 1024.0))
+        else:
+            print("No unaccounted files found")
+        print('')
 
+        paths_table = pd.read_csv(PATHS_CSV)
         from numpy import count_nonzero
         # agg = {'path': 'count', 'sizeMB': 'sum', 'exists': 'sum'}
         # agg = {'sizeMB': {'sizeMB':'sum'},
@@ -161,16 +159,17 @@ class Status(cli.Application):
         agg = {'sizeMB': ['sum'],
                'exists': [count_nonzero, missing],
                'path': ['count']}
-        st = paths.groupby(['pipelineId', 'pathKey']).agg(agg)
+        st = paths_table.groupby(['pipelineId', 'pathKey']).agg(agg)
         st['sizeMB'] = st['sizeMB'] / 1024.0 / 1024.0
         # st.rename(columns={'path':'total'}, inplace=True)
         print(heading('Pipeline Files'))
         # print(st.to_string(index=False))
         print(st.to_string())
-
-        pipelineDiskUsage = paths['sizeMB'].sum() / 1024.0
+        pipelineDiskUsage = paths_table['sizeMB'].sum() / 1024.0
         print("disk usage (G): {:.2f}".format(pipelineDiskUsage))
-        totalDiskUsage = du['diskUsageG'].iloc[0]
+
+        du_table = pd.read_csv(DU_CSV)
+        totalDiskUsage = du_table['diskUsageG'].iloc[0]
 
         print
         print(heading("Project Directory"))

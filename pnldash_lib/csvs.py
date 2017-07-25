@@ -68,6 +68,9 @@ def make_csvs(useCache=False):
                 for pathKey, pathTemplate in pipeline['paths'].items():
                     if pathKey == 'caselist' or pathKey == 'caseid':
                         continue
+                    # ignore input files from outside the project directory
+                    if not local.path(pathTemplate).startswith(local.cwd):
+                        continue
                     for caseid in caseids:
                         path = pathTemplate.replace(caseidString, caseid)
                         paths = glob.glob(path)  # could be a glob pattern
