@@ -37,8 +37,8 @@ def _compute_extra_table():
 
 
 def make_extra():
-    make_find()
     make_csvs()
+    make_find()
     if EXTRA_CSV.exists():
         find_modtime = os.path.getmtime(str(FIND_TXT))
         paths_modtime = os.path.getmtime(str(PATHS_CSV))

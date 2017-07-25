@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+import sys
 from plumbum import cli, local
 import csv
 import yaml
@@ -35,6 +36,9 @@ def readCaselist(caselist):
 
 
 def make_csvs():
+    if not PROJECT_YML.exists():
+        print("Missing {}, create that first (e.g. pnldash init)".format(PROJECT_YML))
+        sys.exit(1)
     paramsCsv = CACHE_DIR / 'params.csv'
     pathsCsv = CACHE_DIR / 'paths.csv'
 
