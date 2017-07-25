@@ -12,6 +12,8 @@ import pandas as pd
 from pnldash_lib import *
 from pnldash_config import *
 from os.path import exists
+from signal import signal, SIGPIPE, SIG_DFL
+signal(SIGPIPE,SIG_DFL)
 
 TEMPLATE = """\
 name: intrust_std
@@ -119,7 +121,7 @@ class Extra(cli.Application):
         dfextra = make_extra()
         if dfextra.empty:
             print('No unaccounted files.', file=sys.stderr)
-        print('\n'.join(dfextra['path'].values))
+        print('\n'.join(sorted(dfextra['path'].values)))
 
 
 @App.subcommand("status")
