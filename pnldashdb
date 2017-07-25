@@ -89,6 +89,8 @@ class Env(cli.Application):
     #TODO make unset option?
 
     def main(self, name):
+        def escape(filepath):
+            return filepath.__str__().replace('(', '\(').replace(')', '\)')
 
         # TODO be able to select projects with same names
         projectdir, yml = db.get_projects(name)[0]
@@ -96,7 +98,9 @@ class Env(cli.Application):
         print("export root={}".format(projectdir))
         paths = yml['pipelines'][self.paramid]['paths']
         for key, path in paths.items():
-            print("export {}={}".format(key, path))
+            if key == 'caselist':
+                continue
+            print("export {}={}".format(key, escape(path)))
 
 
 @App.subcommand("ls")

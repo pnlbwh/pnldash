@@ -34,13 +34,16 @@ def readCaselist(caselist):
         raise Exception("caselist field must be string or list type")
 
 
-def make_csvs(useCache=False):
+def make_csvs():
     paramsCsv = CACHE_DIR / 'params.csv'
     pathsCsv = CACHE_DIR / 'paths.csv'
 
-    if useCache and PATHS_CSV.exists():
-        print("Using cached '{}'.".format(PATHS_CSV))
-        return
+    if PATHS_CSV.exists():
+        yml_modtime = os.path.getmtime(str(PROJECT_YML))
+        paths_modtime = os.path.getmtime(str(PATHS_CSV))
+        if paths_modtime > yml_modtime:
+            # print("Using cached '{}'.".format(PATHS_CSV))
+            return
 
     yml = read_project_yml()
     projectPath = PROJECT_YML.dirname.replace('-', '/')

@@ -36,19 +36,16 @@ def _compute_extra_table():
     return df
 
 
-def make_extra(useCache=True):
-    if not FIND_TXT.exists():
-        make_find()
-    if not PATHS_CSV.exists():
-        make_csvs()
-    extra_modtime = os.path.getmtime(str(EXTRA_CSV))
-    find_modtime = os.path.getmtime(str(FIND_TXT))
-    paths_modtime = os.path.getmtime(str(PATHS_CSV))
-    if useCache and EXTRA_CSV.exists() \
-       and extra_modtime > find_modtime \
-       and extra_modtime > paths_modtime:
-        print("Using cached '{}'.".format(EXTRA_CSV), file=sys.stderr)
-        return pd.read_csv(EXTRA_CSV.__str__())
+def make_extra():
+    make_find()
+    make_csvs()
+    if EXTRA_CSV.exists():
+        find_modtime = os.path.getmtime(str(FIND_TXT))
+        paths_modtime = os.path.getmtime(str(PATHS_CSV))
+        extra_modtime = os.path.getmtime(str(EXTRA_CSV))
+        if extra_modtime > find_modtime and extra_modtime > paths_modtime:
+            # print("Using cached '{}'.".format(EXTRA_CSV), file=sys.stderr)
+            return pd.read_csv(EXTRA_CSV.__str__())
     df = _compute_extra_table()
     df.to_csv(str(EXTRA_CSV), index=False)
     return df

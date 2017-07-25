@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+from __future__ import print_function
 from plumbum import cli, local, FG
 import csv
 import yaml
@@ -83,7 +84,8 @@ class Push(cli.Application):
 
     def main(self):
 
-        make_extra(useCache=True)
+        make_extra()
+        make_find(echo=False, useCache=True)
         dbdir = get_db_dir()
         destDir = local.path(dbdir) / local.cwd.__str__().replace('/',
                                                                   '---')[3:]
@@ -106,8 +108,7 @@ class Find(cli.Application):
 
     def main(self):
         CACHE_DIR.mkdir()
-        make_find(self.echo)
-        make_du()
+        make_find(self.echo, useCache=False)
 
 
 @App.subcommand("extra")
@@ -115,7 +116,9 @@ class Extra(cli.Application):
     """Prints unaccounted files."""
 
     def main(self):
-        dfextra = make_extra(useCache=True)
+        dfextra = make_extra()
+        if dfextra.empty:
+            print('No unaccounted files.', file=sys.stderr)
         print('\n'.join(dfextra['path'].values))
 
 
@@ -123,20 +126,10 @@ class Extra(cli.Application):
 class Status(cli.Application):
     """Prints a summary of the project disk usage."""
 
-    cache = cli.Flag(
-        ['-c', '--cache'],
-        default=False,
-        help="Use cached results instead of recomputing them.")
-
-    # ls = cli.Flag(
-    #     ['-l', '--ls'],
-    #     default=False,
-    #     help="List extra image files not accounted for by pipelines")
-
     def main(self):
         pd.options.display.float_format = '{:,.2f}'.format
 
-        extra_table = make_extra(self.cache)
+        extra_table = make_extra()
         print(heading('Extra Image Files'))
         if not extra_table.empty:
             sizeMBsum = extra_table['sizeMB'].sum()
@@ -144,7 +137,7 @@ class Status(cli.Application):
                 len(extra_table['path'])))
             print("disk usage (G): {:.2f}".format(sizeMBsum / 1024.0))
         else:
-            print("No unaccounted files found")
+            print("No unaccounted files found.")
         print('')
 
         paths_table = pd.read_csv(PATHS_CSV)
@@ -170,8 +163,7 @@ class Status(cli.Application):
 
         du_table = pd.read_csv(DU_CSV)
         totalDiskUsage = du_table['diskUsageG'].iloc[0]
-
-        print
+        print('')
         print(heading("Project Directory"))
         print("disk usage (G): {:.2f}".format(totalDiskUsage))
 
