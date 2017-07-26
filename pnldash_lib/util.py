@@ -1,12 +1,10 @@
-from plumbum import local
 import os.path
 
 def getsize(path):
-    pathP = local.path(path)
-    if not pathP.exists():
+    if not os.path.exists(path):
         return 0
-    if '.nhdr' in pathP.suffixes:
+    if path.endswith('nhdr'):
         return os.path.getsize(path)/1024.0/1024.0 + \
-            getsize(pathP.with_suffix('.raw').__str__()) + \
-            getsize(pathP.with_suffix('.raw.gz').__str__())
+                getsize(path[:-4]+'raw') + \
+                getsize(path[:-4]+'raw.gz')
     return os.path.getsize(path)/1024.0/1024.0
