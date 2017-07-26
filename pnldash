@@ -115,8 +115,16 @@ class Find(cli.Application):
         ['-e', '--echo'], default=False, help="Print files to stdout as well")
 
     def main(self):
-        CACHE_DIR.mkdir()
         make_find(self.echo, useCache=False)
+
+
+@App.subcommand("paths")
+class Paths(cli.Application):
+    """Updates pipeline paths (use if newly generated paths available)"""
+
+    def main(self):
+        PATHS_CSV.delete()
+        make_csvs()
 
 
 @App.subcommand("extra")
@@ -124,6 +132,7 @@ class Extra(cli.Application):
     """Prints unaccounted files."""
 
     def main(self):
+        # make sure extra cache file is up to date
         dfextra = make_extra()
         if dfextra.empty:
             print('No unaccounted files.', file=sys.stderr)

@@ -93,9 +93,9 @@ def make_csvs():
                             exists = False
                             sizeMB = None
                             if os.path.exists(path):
-                                mtime = os.path.getmtime(path)
-                                mtimeStr = time.strftime('%Y-%m-%d %H:%M:%S',
-                                                         time.localtime(mtime))
+                                # mtime = os.path.getmtime(path)
+                                # mtimeStr = time.strftime('%Y-%m-%d %H:%M:%S',
+                                #                          time.localtime(mtime))
                                 exists = True
                                 sizeMB = getsize(path)
                             csvwriterPaths.writerow(
