@@ -5,8 +5,6 @@ import csv
 import yaml
 from collections import OrderedDict
 import sys
-from os.path import getmtime
-import os
 from plumbum.cmd import scp
 import pandas as pd
 from pnldash_lib import *
@@ -14,6 +12,15 @@ from pnldash_config import *
 from os.path import exists
 from signal import signal, SIGPIPE, SIG_DFL
 signal(SIGPIPE,SIG_DFL)
+
+import logging
+logging.basicConfig(
+            level=logging.INFO,
+            # format='%(asctime)s - %(levelname)5s - %(name)s:  %(message)s',
+            format='%(levelname)s:%(name)s: %(message)s',
+            datefmt="%Y-%m-%d %H:%M")
+log = logging.getLogger(__name__)
+
 
 TEMPLATE = """\
 name: intrust_std
@@ -131,6 +138,7 @@ class Status(cli.Application):
         pd.options.display.float_format = '{:,.2f}'.format
 
         extra_table = make_extra()
+        print('')
         print(heading('Extra Image Files'))
         if not extra_table.empty:
             sizeMBsum = extra_table['sizeMB'].sum()
@@ -170,7 +178,9 @@ class Status(cli.Application):
 
 
 if __name__ == '__main__':
-    CACHE_DIR.mkdir()
+    if not CACHE_DIR.exists():
+        log.info("Running for first time, might take a few minutes to generate cache.")
+        CACHE_DIR.mkdir()
     import pnldash_lib.ls
     App.subcommand("ls", pnldash_lib.ls.Ls)
     App.run()

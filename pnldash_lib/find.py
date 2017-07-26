@@ -3,6 +3,8 @@ from plumbum import cli, local
 import sys
 import pnldash_config as config
 import pandas as pd
+import logging
+log = logging.getLogger(__name__)
 
 DEFAULT_EXTS = ['.nrrd', '.nii.gz', '.nii', '.vtk', '.nhdr', '.mgz', '.dcm',
                 '.dcm.gz', '.IMA', '.IMA.gz']
@@ -34,17 +36,17 @@ def _make_du():
 
 def make_find(echo=False, useCache=True):
     if useCache and config.FIND_TXT.exists() and config.DU_CSV.exists():
-        _print("Using cached file: {}".format(config.FIND_TXT))
+        log.info("Using cached '{}' for all image files.".format(config.FIND_TXT))
         return
     paths = local.cwd.walk(_fileFilter, _dirFilter)
     num = 0
-    _print("Crawling directory for image files, might take a few minutes...")
+    log.info("Crawling directory for image files, might take a few minutes...")
     with open(config.FIND_TXT, 'w') as f:
         for path in paths:
             f.write(path + '\n')
             num = num + 1
             if echo:
                 print(path)
-    _print("Found {} file(s) with extensions: {}".format(num, ', '.join(EXTS)))
-    _print("Made '{}".format(config.FIND_TXT))
+    log.info("Found {} file(s) with extensions: {}".format(num, ', '.join(EXTS)))
+    log.info("Made '{}".format(config.FIND_TXT))
     _make_du()

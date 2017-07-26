@@ -9,6 +9,8 @@ import time
 from util import getsize
 from pnldash_config import *
 from . import read_project_yml
+import logging
+log = logging.getLogger(__name__)
 
 PARAM_HDR = ['projectPath', 'name', 'grantId', 'description', 'pipelineId',
              'pipelineDescription', 'param', 'paramValue']
@@ -46,8 +48,10 @@ def make_csvs():
         yml_modtime = os.path.getmtime(str(PROJECT_YML))
         paths_modtime = os.path.getmtime(str(PATHS_CSV))
         if paths_modtime > yml_modtime:
-            # print("Using cached '{}'.".format(PATHS_CSV))
+            log.info("Using cached '{}' for pipeline filepaths.".format(PATHS_CSV))
             return
+
+    log.info("Generate pipeline file paths from {}".format(PROJECT_YML.name))
 
     yml = read_project_yml()
     projectPath = PROJECT_YML.dirname.replace('-', '/')
@@ -97,5 +101,5 @@ def make_csvs():
                             csvwriterPaths.writerow(
                                 [projectPath, pipelineId, pathKey, caseid,
                                  path, sizeMB, mtime, mtimeStr, exists])
-        # print("Made '{}'".format(paramsCsv))
-        # print("Made '{}'".format(pathsCsv))
+        log.info("Made '{}'".format(paramsCsv))
+        log.info("Made '{}'".format(pathsCsv))

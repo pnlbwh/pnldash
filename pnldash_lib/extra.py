@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 from __future__ import print_function
 from plumbum import cli, local
 import sys
@@ -10,6 +8,8 @@ from util import getsize
 from pnldash_config import *
 from .find import make_find
 from .csvs import make_csvs
+import logging
+log = logging.getLogger(__name__)
 
 
 def _heading(s):
@@ -42,8 +42,9 @@ def make_extra():
         paths_modtime = os.path.getmtime(str(PATHS_CSV))
         extra_modtime = os.path.getmtime(str(EXTRA_CSV))
         if extra_modtime > find_modtime and extra_modtime > paths_modtime:
-            # print("Using cached '{}'.".format(EXTRA_CSV), file=sys.stderr)
+            log.info("Using cached file '{}' for unaccounted files.".format(EXTRA_CSV))
             return pd.read_csv(EXTRA_CSV.__str__())
+    log.info("Compute unaccounted files, might take a minute if your project directory is large")
     df = _compute_extra_table()
     df.to_csv(str(EXTRA_CSV), index=False)
     return df
