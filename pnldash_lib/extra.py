@@ -21,17 +21,29 @@ def _relativePath(p):
 
 
 def _compute_extra_table():
-    paths = pd.read_csv(PATHS_CSV.__str__())
-    if paths.empty:
+    pipeline_files = pd.read_csv(PATHS_CSV.__str__())
+    if pipeline_files.empty:
         raise Exception("'{}' is empty".format(PATHS_CSV))
-    existing_paths = [local.path(p) for p in paths[paths.exists]['path']]
+
+    existing_pipeline_files = [local.path(p) for p in pipeline_files[pipeline_files.exists]['path']]
+    existing_pipeline_files.sort()
+
     with open(FIND_TXT, 'r') as f:
-        found_paths = f.read().splitlines()
-    extraFiles = [str(_relativePath(p))
-                  for p in set(found_paths) - set(existing_paths)]
-    sizes = map(getsize, extraFiles)
+        all_image_files = f.read().splitlines()
+    all_image_files.sort()
+
+    from plumbum.cmd import diff, tail, sort, cut
+    with local.tempdir() as tmpdir:
+        p = tmpdir / 'p'
+        a = tmpdir / 'a'
+        (tail['-n+2', PATHS_CSV] | cut['-d', ',' ,'-f', 5] | sort > p)()
+        (sort[FIND_TXT] > a)()
+        extra_image_files = diff('--new-line-format=""', '--unchanged-line-format=""', p, a, retcode=[0,1])
+
+    sizes = map(getsize, extra_image_files)
+
     df = pd.DataFrame({'projectPath': str(local.cwd),
-                       'path': extraFiles,
+                       'path': extra_image_files,
                        'sizeMB': sizes, })
     return df
 

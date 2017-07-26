@@ -38,7 +38,7 @@ def make_find(echo=False, useCache=True):
         return
     paths = local.cwd.walk(_fileFilter, _dirFilter)
     num = 0
-    _print("Crawling directory for image files...")
+    _print("Crawling directory for image files, might take a few minutes...")
     with open(config.FIND_TXT, 'w') as f:
         for path in paths:
             f.write(path + '\n')
