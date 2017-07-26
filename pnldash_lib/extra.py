@@ -38,7 +38,7 @@ def _compute_extra_table():
         a = tmpdir / 'a'
         (tail['-n+2', PATHS_CSV] | cut['-d', ',' ,'-f', 5] | sort > p)()
         (sort[FIND_TXT] > a)()
-        extra_image_files = diff('--new-line-format=""', '--unchanged-line-format=""', p, a, retcode=[0,1])
+        extra_image_files = diff('--new-line-format=""', '--unchanged-line-format=""', a, p, retcode=[0,1]).splitlines()[:-1]
 
     sizes = map(getsize, extra_image_files)
 
