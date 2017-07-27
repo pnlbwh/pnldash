@@ -21,15 +21,16 @@ def _relativePath(p):
 
 
 def _compute_extra_table():
-    paths = pd.read_csv(PATHS_CSV.__str__())
-    if paths.empty:
+    paths_tbl = pd.read_csv(PATHS_CSV.__str__())
+    if paths_tbl.empty:
         raise Exception("'{}' is empty".format(PATHS_CSV))
-    existing_paths = paths[paths.exists]['path']
+    pipeline_paths = paths_tbl[paths_tbl.exists]['path']
     with open(FIND_TXT, 'r') as f:
         found_paths = f.read().splitlines()
-    extraFiles = list(set(found_paths) - set(existing_paths))
+    extraFiles = list(set(found_paths) - set(pipeline_paths))
     sizes = map(getsize, extraFiles)
-    df = pd.DataFrame({ 'path': extraFiles,
+    df = pd.DataFrame({'projectPath': local.cwd,
+                       'path': extraFiles,
                        'sizeMB': sizes, })
     return df
 

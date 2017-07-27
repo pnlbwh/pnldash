@@ -100,6 +100,6 @@ def make_csvs():
                                 sizeMB = getsize(path)
                             csvwriterPaths.writerow(
                                 [projectPath, pipelineId, pathKey, caseid,
-                                 path, sizeMB, mtime, mtimeStr, exists])
+                                 local.path(path), sizeMB, mtime, mtimeStr, exists])
         log.info("Made '{}'".format(paramsCsv))
         log.info("Made '{}'".format(pathsCsv))

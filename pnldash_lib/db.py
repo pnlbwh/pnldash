@@ -13,6 +13,8 @@ def get_db_dir():
     if not dbdir:
         errmsg = "Set '{}' environment variable first.".format(PROJECTS_DB_ENV)
         raise Exception(errmsg)
+    if ':' in dbdir:
+        return dbdir
     return local.path(dbdir)
 
 

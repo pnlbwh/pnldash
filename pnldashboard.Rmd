@@ -6,6 +6,7 @@ output:
       - { title: "PNL Project Dashboard Test", align: right }
       source_code: embed
       orientation: columns
+      smart: false
 always_allow_html: yes
 ---
 
@@ -21,9 +22,9 @@ Overview
 =====================================
 
 ```{r}
-PATHS <- fread("_data/paths.csv")
-diffPaths <- fread("_data/diffPaths.csv")
-DU <- fread("_data/du.csv")
+PATHS <- fread("paths.csv")
+diffPaths <- fread("diffPaths.csv")
+DU <- fread("du.csv")
 #TODO handle empty project paths
 paths.byProject = PATHS[PATHS[,exists] & ! path %like% '\\.\\./.*', .('project files (G)'=sum(sizeMB)/1024),by=projectPath]
 diffPaths.byProject = diffPaths[,.('extra files (G)'=sum(sizeMB)/1024), by=projectPath]
@@ -33,7 +34,7 @@ DT::datatable(SPACE_TABLE, options = list(bPaginate=F)) %>% DT::formatRound(c('p
 ```
 
 ```{r include=FALSE}
-params <- fread('_data/params.csv')
+params <- fread('params.csv')
 paths.grouped <- PATHS[,.( completed=sum(exists), missing=sum(not(exists)), total=.N, 'size (G)'=sum(sizeMB, na.rm=T)/1024, examplePath=head(path,n=1)), by=.(projectPath, pathKey, pipelineId)]
 
 indentText <- function(text) {
