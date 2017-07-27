@@ -24,7 +24,7 @@ def concat(l):
 def readCaselistItem(s):
     if '/' in s:
         with open(s, 'r') as f:
-            return [line.split()[0] for line in f.read().splitlines()]
+            return [line.split()[0] for line in f.read().splitlines() if not line.startswith('#')]
     return [s]
 
 
