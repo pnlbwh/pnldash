@@ -54,7 +54,7 @@ def make_csvs():
     log.info("Generate pipeline file paths from {}".format(PROJECT_YML.name))
 
     yml = read_project_yml()
-    projectPath = PROJECT_YML.dirname.replace('-', '/')
+    projectPath = PROJECT_YML.dirname
 
     CACHE_DIR.mkdir()
 
