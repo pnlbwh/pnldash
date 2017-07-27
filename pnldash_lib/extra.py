@@ -45,7 +45,7 @@ def make_extra():
         if extra_modtime > find_modtime and extra_modtime > paths_modtime:
             log.info("Using cached file '{}' for unaccounted files.".format(EXTRA_CSV))
             return pd.read_csv(EXTRA_CSV.__str__())
-    log.info("Compute unaccounted files, might take a minute if your project directory is large")
+    log.info("Compute unaccounted files, might take a minute the first time if your project directory is large")
     df = _compute_extra_table()
     df.to_csv(str(EXTRA_CSV), index=False)
     return df

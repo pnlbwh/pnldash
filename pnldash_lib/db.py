@@ -4,6 +4,7 @@ from plumbum import cli, local, FG
 from pnldash_config import PROJECTS_DB_ENV
 import pnldash_config as config
 from readyml import read_project_yml, read_yml
+from urlparse import urlparse
 
 PROJECT_YML_FILENAME = config.PROJECT_YML.name
 
@@ -16,6 +17,22 @@ def get_db_dir():
     if ':' in dbdir:
         return dbdir
     return local.path(dbdir)
+
+def spliturl(url):
+    if ':' in url and not url.startswith('ssh://'):
+        url = 'ssh://' + url
+    result = urlparse(url)
+    return result
+
+# def spliturl(url):
+#     user, host_port_path, _ = url.rpartition('@')
+#     host, port_path, _ = host_port_path.rpartition(':')
+#     if port_path.startswith('/'):  # no port
+#         return (user, host, port_path, 22)
+#     print port_path
+#     print 'asdfasfsa'
+#     port, path = port_path.split('/', 1)
+#     return (user, host, '/' + path, int(port))
 
 
 def get_db_project_dirs():

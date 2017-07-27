@@ -8,6 +8,7 @@ from pnldash_config import *
 import pandas as pd
 from pprint import pprint
 import pnldash_lib.db as db
+from plumbum.path.utils import copy
 import logging
 logging.basicConfig(
             level=logging.INFO,
@@ -38,15 +39,6 @@ class App(cli.Application):
             return 1  # error exit code
 
 
-def _spliturl(url):
-    user, host_port_path = url.split('@')
-    host, port_path = host_port_path.split(':')
-    if port_path.startswith('/'):  # no port
-        return (user, host, port_path, None)
-    port, path = port_path.split('/', 1)
-    return (user, host, '/' + path, int(port))
-
-
 @App.subcommand("make")
 class Make(cli.Application):
     """Make HTML dashboard report."""
@@ -59,15 +51,16 @@ class Make(cli.Application):
 
         # if remote database
         if ':' in dbdir:
-            user, host, remotepath, port = _spliturl(dbdir)
+            user, host, remotepath, port = db.spliturl(dbdir)
             print('host: {host}, user: {user}, port: {port}, path: {remotepath}'.format(**locals()))
             log.info('Log into remote and make dashboard')
             with SshMachine(host, user=user, port=port) as rem:
                 _ = rem['pnldashdb']('make', '--db', remotepath)
-            scphost = '{user}@{host}'.format(**locals())
+                copy(rem.path('pnldashboard.html'), local.cwd)
+            # scphost = '{user}@{host}'.format(**locals())
             log.info('Copy dashboard to current directory')
-            from plumbum.cmd import scp
-            scp['-P', port, scphost + ':pnldashboard.html', local.cwd] & FG
+            # from plumbum.cmd import scp
+            # scp('-P', port, scphost + ':pnldashboard.html', local.cwd)
             log.info("Made 'pnldashboard.html'")
         else:
             dbprojectdirs = db.get_db_project_dirs()

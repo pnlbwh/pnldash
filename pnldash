@@ -1,11 +1,11 @@
 #!/usr/bin/env python
 from __future__ import print_function
-from plumbum import cli, local, FG
+from plumbum import cli, local, FG, SshMachine
 import csv
 import yaml
 from collections import OrderedDict
 import sys
-from plumbum.cmd import scp
+from plumbum.path.utils import copy
 import pandas as pd
 from pnldash_lib import *
 from pnldash_config import *
@@ -92,16 +92,21 @@ class Push(cli.Application):
     """Copies pnldash.yml and .pnldash/* to central project database"""
 
     def main(self):
-
         make_extra()
+        fs = [PROJECT_YML, PATHS_CSV, PARAMS_CSV, EXTRA_CSV, DU_CSV]
+        dbprojdir = local.cwd.__str__().replace('/', '---')[3:] + '/'
         dbdir = get_db_dir()
-        destDir = local.path(dbdir) / local.cwd.__str__().replace('/',
-                                                                  '---')[3:]
-        destDir.mkdir()
-
-        for file in [PROJECT_YML, PATHS_CSV, PARAMS_CSV, EXTRA_CSV, DU_CSV]:
-            scp[file, destDir] & FG
-            print("Copied '{}' to '{}'".format(file, destDir))
+        url = spliturl(dbdir)
+        dbprojdir = url.path + '/' + dbprojdir
+        log.info('Copy files to central database...')
+        if url.scheme:
+            with SshMachine(url.hostname, user=url.username, port=url.port) as rem:
+                copy(fs, rem.path(dbprojdir))
+        else:
+            copy(fs, dbprojdir)
+        print("Copied")
+        print('\n'.join(fs))
+        print('to {} on host {}'.format(dbprojdir, url.hostname or 'localhost'))
 
 
 def heading(s):
