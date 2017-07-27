@@ -49,9 +49,9 @@ class Make(cli.Application):
     def main(self, *args):
         dbdir = self.dbpath or db.get_db_dir()
 
-        # if remote database
-        if ':' in dbdir:
-            user, host, remotepath, port = db.spliturl(dbdir)
+        url = db.spliturl(dbdir)
+        if url.scheme: # if remote database
+            user, host, remotepath, port = (url.username, url.hostname, url.path, url.port)
             print('host: {host}, user: {user}, port: {port}, path: {remotepath}'.format(**locals()))
             log.info('Log into remote and make dashboard')
             with SshMachine(host, user=user, port=port) as rem:
