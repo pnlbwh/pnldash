@@ -31,29 +31,50 @@ class App(cli.Application):
             return 1  # error exit code
 
 
+def _spliturl(url):
+    user, host_port_path = url.split('@')
+    host, port_path = host_port_path.split(':')
+    if port_path.startswith('/'):  # no port
+        return (user, host, port_path, None)
+    port, path = port_path.split('/', 1)
+    return (user, host, '/' + path, port)
+
+
 @App.subcommand("make")
 class Make(cli.Application):
     """Make HTML dashboard report."""
 
+    dbpath = cli.SwitchAttr(['--db'], cli.ExistingDirectory,
+                            help="use this local database path")
+
     def main(self, *args):
-        dbdir = db.get_db_dir()
-        PROJECT_YML = config.PROJECT_YML.name
-        projectdirs = [d for d in dbdir.list() if d.is_dir() and (d / PROJECT_YML).exists()]
+        dbdir = self.dbpath or db.get_db_dir()
 
-        pathcsvs = [pd / (PATHS_CSV.name) for pd in projectdirs]
-        paramcsvs = [pd / (PARAMS_CSV.name) for pd in projectdirs]
-        extracsvs = [pd / (EXTRA_CSV.name) for pd in projectdirs]
-        ducsvs = [pd / (DU_CSV.name) for pd in projectdirs]
-        tmpdir = local.path(__file__).dirname / '_data'
-        _stack_csvs(pathcsvs, tmpdir / 'paths.csv')
-        _stack_csvs(paramcsvs, tmpdir / 'params.csv')
-        _stack_csvs(extracsvs, tmpdir / 'diffPaths.csv')
-        _stack_csvs(ducsvs, tmpdir / 'du.csv')
+        # if remote database
+        if '@' in dbdir:
+            user, host, remotepath, port = _spliturl(dbdir)
+            with SshMachine(host, user=user, port=port) as rem:
+                rem['pnldashdb']('make', '--db', remotepath)
+            scphost = '{user}@{host}:{remotepath}'.format(**locals())
+            scp[scphost + '/pnldashboard.html', local.cwd]
+            log.info("Made 'pnldashboard.html'")
+        else:
+            dbprojectdirs = db.get_db_project_dirs()
+            pathcsvs = [pd / (PATHS_CSV.name) for pd in dbprojectdirs]
+            paramcsvs = [pd / (PARAMS_CSV.name) for pd in dbprojectdirs]
+            extracsvs = [pd / (EXTRA_CSV.name) for pd in dbprojectdirs]
+            ducsvs = [pd / (DU_CSV.name) for pd in dbprojectdirs]
+            _stack_csvs(pathcsvs, dbdir / 'paths.csv')
+            _stack_csvs(paramcsvs, dbdir / 'params.csv')
+            _stack_csvs(extracsvs, dbdir / 'diffPaths.csv')
+            _stack_csvs(ducsvs, dbdir / 'du.csv')
 
-        from plumbum.cmd import R
-        thisdir = local.path(__file__).dirname
-        print("Make dashboard")
-        R['-e', "library('rmarkdown'); setwd('{}'); render('pnldashboard.Rmd', output_dir='{}')".format(thisdir, local.cwd)] & FG
+            from plumbum.cmd import R
+            thisdir = local.path(__file__).dirname
+            print("Make dashboard")
+            R['-e',
+              "library('rmarkdown'); setwd('{}'); render('pnldashboard.Rmd', output_dir='{}')".format(
+                  thisdir, local.cwd)] & FG
 
 
 @App.subcommand("update")
@@ -75,12 +96,13 @@ class Update(cli.Application):
                     pnldash('find')
                 pnldash('status')
                 pnldash('push')
+
+
 def _print_map(d, prepend='', keys=None, fd=sys.stderr):
     if not keys:
         keys = d.keys()
     for k in keys:
         fd.write("{}{:<25} {:<15}".format(prepend, k, d[k]) + '\n')
-
 
 
 @App.subcommand("env")
@@ -102,8 +124,8 @@ class Env(cli.Application):
         # TODO be able to select projects with same names
         projectdir, yml = db.get_projects(name)[0]
 
-        print("# param id #{} (there are a total of {} pipeline(s))".format(self.paramid,
-                                                len(yml['pipelines'])))
+        print("# param id #{} (there are a total of {} pipeline(s))".format(
+            self.paramid, len(yml['pipelines'])))
         _print_map(yml['pipelines'][self.paramid]['parameters'], prepend='# ')
         print('')
         print("export root={}".format(projectdir))
@@ -121,7 +143,8 @@ class List(cli.Application):
     def main(self):
         for projectdir, yml in db.get_projects():
             numpipelines = len(yml['pipelines'])
-            print(yml['name'] + " ({}) ({} pipeline(s))".format(projectdir, numpipelines))
+            print(yml['name'] + " ({}) ({} pipeline(s))".format(projectdir,
+                                                                numpipelines))
 
 
 @App.subcommand("show")
@@ -137,6 +160,7 @@ class Show(cli.Application):
         print(yml['description\n'])
         print("## Pipelines\n")
         pprint(yml['pipelines'])
+
 
 if __name__ == '__main__':
     App.run()

@@ -16,7 +16,7 @@ def get_db_dir():
     return local.path(dbdir)
 
 
-def _get_db_project_dirs():
+def get_db_project_dirs():
     return [d for d in get_db_dir().list()
             if d.is_dir() and (d / PROJECT_YML_FILENAME).exists()]
 
@@ -27,7 +27,7 @@ def _project_dir(dbprojdir):
 # TODO add remote access
 def get_projects(name=None):
     result = []
-    for dbprojdir in _get_db_project_dirs():
+    for dbprojdir in get_db_project_dirs():
         yml = read_yml(dbprojdir / PROJECT_YML_FILENAME)
         projdir = _project_dir(dbprojdir)
         if name and yml['name'] == name:
@@ -38,6 +38,4 @@ def get_projects(name=None):
 
 
 def get_project_dirs():
-    dbdir = get_db_dir()
-    PROJECT_YML = config.PROJECT_YML.name
-    return [_project_dir(d) for d in _get_db_project_dirs()]
+    return [_project_dir(d) for d in get_db_project_dirs()]
