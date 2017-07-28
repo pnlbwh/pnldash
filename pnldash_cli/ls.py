@@ -72,14 +72,14 @@ class Ls(cli.Application):
             placeholder = pipeline['paths']['caseid']
             for caseid in caseids:
                 globpath = template_path.replace(placeholder, caseid)
-                paths = glob.glob(globpath) or [template_path]
+                paths = glob.glob(globpath) or [globpath]
                 for path in paths:
                     path = local.path(path)
                     if self.print_missing == path.exists() and not self.print_all:
                         continue
                     if self.print_caseid_only:
                         print('{}'.format(caseid))
-                        return
+                        continue
                     if self.print_csv:
                         sys.stdout.write('{},'.format(caseid))
                     print(path)
