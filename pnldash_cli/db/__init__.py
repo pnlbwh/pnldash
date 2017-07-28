@@ -5,23 +5,6 @@ from plumbum import cli, local, FG
 from plumbum.path.utils import copy, gui_open
 from pnldash_config import *
 from pnldash_lib import open_db, make_extra
-import yaml
-
-PNLDASH_FILES = [PROJECT_YML, PATHS_CSV, PARAMS_CSV, EXTRA_CSV, DU_CSV]
-
-
-class Push(cli.Application):
-    """Adds your project to the central database."""
-
-    def main(self):
-        make_extra()
-        with open_db() as (url, machine, dbpath):
-            destdir = dbpath / (local.cwd.replace('/', '---')[3:])
-            log.info('Copy files to central database...')
-            copy(PNLDASH_FILES, destdir)
-            print("Copied")
-            print('\n'.join(PNLDASH_FILES))
-            print('to {}'.format(url))
 
 
 class Report(cli.Application):

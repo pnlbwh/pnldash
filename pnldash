@@ -81,14 +81,15 @@ if __name__ == '__main__':
     import pnldash_cli.status
     import pnldash_cli.info
     import pnldash_cli.env
+    import pnldash_cli.push
     import pnldash_cli.db
     App.subcommand("status", pnldash_cli.status.Status)
     App.subcommand("init", pnldash_cli.init.Init)
     App.subcommand("ls", pnldash_cli.ls.Ls)
     App.subcommand("info", pnldash_cli.info.Info)
     App.subcommand("env", pnldash_cli.env.Env)
+    App.subcommand("push", pnldash_cli.push.Push)
 
-    Db.subcommand("push", pnldash_cli.db.Push)
     Db.subcommand("list", pnldash_cli.db.List)
     Db.subcommand("info", pnldash_cli.db.Info)
     Db.subcommand("report", pnldash_cli.db.Report)
