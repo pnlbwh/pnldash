@@ -1,7 +1,7 @@
 from __future__ import print_function
 from plumbum import cli, local
 import sys
-import config as config
+import pnldash_config as config
 import pandas as pd
 import logging
 log = logging.getLogger(__name__)

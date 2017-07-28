@@ -22,6 +22,12 @@ class App(cli.Application):
         if not self.nested_command:
             print("No command given")
             return 1
+        _, cmd = self.nested_command
+        subcmd = cmd[0].split()[1]
+        if subcmd != 'db':
+            if not CACHE_DIR.exists():
+                log.info( "Running for the first time, might take a few minutes to generate the cache files.")
+                CACHE_DIR.mkdir()
 
 
 @App.subcommand("db")
@@ -67,10 +73,6 @@ class Extra(cli.Application):
 
 
 if __name__ == '__main__':
-    if not CACHE_DIR.exists():
-        log.info(
-            "Running for the first time, might take a few minutes to generate the cache files.")
-        CACHE_DIR.mkdir()
     import pnldash_cli.ls
     import pnldash_cli.init
     import pnldash_cli.status
