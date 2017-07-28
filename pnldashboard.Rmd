@@ -17,10 +17,10 @@ library(DT)
 library(magrittr)
 library(flexdashboard)
 library(knitr)
-PATHS <- '../*/paths.csv' %>% Sys.glob %>% lapply(fread) %>% rbindlist
-EXTRA <- '../*/unaccounted_files.csv' %>% Sys.glob %>% lapply(fread) %>% rbindlist
-DU <- '../*/du.csv' %>% Sys.glob %>% lapply(fread) %>% rbindlist
-PARAMS <- '../*/params.csv' %>% Sys.glob %>% lapply(fread) %>% rbindlist
+PATHS <- '*/paths.csv' %>% Sys.glob %>% lapply(fread) %>% rbindlist
+EXTRA <- '*/unaccounted_files.csv' %>% Sys.glob %>% lapply(fread) %>% rbindlist
+DU <- '*/du.csv' %>% Sys.glob %>% lapply(fread) %>% rbindlist
+PARAMS <- '*/params.csv' %>% Sys.glob %>% lapply(fread) %>% rbindlist
 ```
 
 Overview

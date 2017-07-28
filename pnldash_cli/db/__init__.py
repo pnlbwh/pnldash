@@ -47,7 +47,7 @@ class Open(cli.Application):
     def main(self):
 
         if not local.path('pnldashboard.html').exists() or self.refresh:
-            Make.invoke()
+            Report.invoke()
         gui_open('pnldashboard.html')
 
 
