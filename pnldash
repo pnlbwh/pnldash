@@ -1,14 +1,12 @@
 #!/usr/bin/env python
 from __future__ import print_function
 from plumbum import cli, local, FG, SshMachine
+from pnldash_config import *
 import csv
 import yaml
-from collections import OrderedDict
 import sys
 from plumbum.path.utils import copy
-import pandas as pd
 from pnldash_lib import *
-from pnldash_config import *
 from os.path import exists
 from signal import signal, SIGPIPE, SIG_DFL
 signal(SIGPIPE,SIG_DFL)
@@ -16,44 +14,9 @@ signal(SIGPIPE,SIG_DFL)
 import logging
 logging.basicConfig(
             level=logging.INFO,
-            # format='%(asctime)s - %(levelname)5s - %(name)s:  %(message)s',
             format='%(levelname)s:%(name)s: %(message)s',
             datefmt="%Y-%m-%d %H:%M")
 log = logging.getLogger(__name__)
-
-
-TEMPLATE = """\
-name: intrust_std
-grantId:
-description: |
-            Meaning of path keys:
-            fs:      freesurfer subject directory
-            dwied:   eddy corrected DWI
-            dwimask: FSL bet generated DWI mask
-            etc.
-pipelines:
-    - parameters:
-        version_FreeSurfer: 5.3.0
-        hash_UKFTractography: 421a7ad
-        hash_tract_querier: e045eab
-        hash_BRAINSTools: 41353e8
-        hash_trainingDataT1AHCC: d6e5990
-      paths:
-        fs: _data/003_GNX_007/freesurfer/*/*
-        dwied: _data/003_GNX_007/std_dwied0.nrrd
-        dwimask: _data/003_GNX_007/std_dwimask0.nrrd
-        t1mask: _data/003_GNX_007/std_t1mask0.nrrd
-        t1: _data/003_GNX_007/std_t10.nrrd
-        wmql: _data/003_GNX_007/wmql/*.vtk
-        tractmeasures: _data/003_GNX_007/std_tractmeasures0.csv
-        dwixc: _data/003_GNX_007/std_dwixc0.nrrd
-        ukf: _data/003_GNX_007/std_ukf0.vtk
-        t1xc: _data/003_GNX_007/std_t1xc0.nrrd
-        fsindwi: _data/003_GNX_007/std_fsindwi0.nii.gz
-        dwi: _data/003_GNX_007/std_dwi0.nhdr
-        caseid: 003_GNX_007
-        caselist: ./caselist.txt
-""".format(local.cwd.name.__str__())
 
 
 class App(cli.Application):
@@ -66,51 +29,16 @@ class App(cli.Application):
             return 1
 
 
-@App.subcommand("init")
-class Init(cli.Application):
-    """Makes template 'pnldash.yml'"""
+@App.subcommand("db")
+class Db(cli.Application):
+    def main(self, *args):
+        if args:
+            print("Unknown command {0!r}".format(args[0]))
+            return 1
+        if not self.nested_command:
+            print("No command given")
+            return 1
 
-    force = cli.Flag(['-f', '--force'], default=False, help='force overwrite')
-
-    def main(self):
-        if exists(PROJECT_YML) and not self.force:
-            msg = "'{}' already exists, to recreate it delete it first or use --force/-f flag.".format(
-                PROJECT_YML)
-            print(msg)
-            sys.exit(1)
-
-        represent_dict_order = lambda self, data: self.represent_mapping('tag:yaml.org,2002:map', data.items())
-        yaml.add_representer(OrderedDict, represent_dict_order)
-
-        with open(PROJECT_YML, 'w') as f:
-            f.write(TEMPLATE)
-        print("Made template '{}'.".format(PROJECT_YML))
-
-
-@App.subcommand("push")
-class Push(cli.Application):
-    """Copies pnldash.yml and .pnldash/* to central project database"""
-
-    def main(self):
-        make_extra()
-        fs = [PROJECT_YML, PATHS_CSV, PARAMS_CSV, EXTRA_CSV, DU_CSV]
-        dbprojdir = local.cwd.__str__().replace('/', '---')[3:] + '/'
-        dbdir = get_db_dir()
-        url = spliturl(dbdir)
-        dbprojdir = url.path + '/' + dbprojdir
-        log.info('Copy files to central database...')
-        if url.scheme:
-            with SshMachine(url.hostname, user=url.username, port=url.port) as rem:
-                copy(fs, rem.path(dbprojdir))
-        else:
-            copy(fs, dbprojdir)
-        print("Copied")
-        print('\n'.join(fs))
-        print('to {} on host {}'.format(dbprojdir, url.hostname or 'localhost'))
-
-
-def heading(s):
-    return s + '\n' + len(s) * '-'
 
 
 @App.subcommand("find")
@@ -144,57 +72,16 @@ class Extra(cli.Application):
         print('\n'.join(sorted(dfextra['path'].values)))
 
 
-@App.subcommand("status")
-class Status(cli.Application):
-    """Prints a summary of the project disk usage."""
-
-    def main(self):
-        pd.options.display.float_format = '{:,.2f}'.format
-
-        extra_table = make_extra()
-        print('')
-        print(heading('Extra Image Files'))
-        if not extra_table.empty:
-            sizeMBsum = extra_table['sizeMB'].sum()
-            print("{} unaccounted image file(s) found.".format(
-                len(extra_table['path'])))
-            print("disk usage (G): {:.2f}".format(sizeMBsum / 1024.0))
-        else:
-            print("No unaccounted files found.")
-        print('')
-
-        paths_table = pd.read_csv(PATHS_CSV)
-        from numpy import count_nonzero
-        # agg = {'path': 'count', 'sizeMB': 'sum', 'exists': 'sum'}
-        # agg = {'sizeMB': {'sizeMB':'sum'},
-        #         'exists': {'exists': count_nonzero, 'missing': lambda x: count_nonzero(~x) },
-        #        'path': {'total': 'count'}
-        #         }
-        missing = lambda x: count_nonzero(~x)
-
-        agg = {'sizeMB': ['sum'],
-               'exists': [count_nonzero, missing],
-               'path': ['count']}
-        st = paths_table.groupby(['pipelineId', 'pathKey']).agg(agg)
-        st['sizeG'] = st['sizeMB'] / 1024.0
-        # st.rename(columns={'path':'total'}, inplace=True)
-        print(heading('Pipeline Files'))
-        # print(st.to_string(index=False))
-        print(st.to_string())
-        pipelineDiskUsage = paths_table['sizeMB'].sum() / 1024.0
-        print("disk usage (G): {:.2f}".format(pipelineDiskUsage))
-
-        du_table = pd.read_csv(DU_CSV)
-        totalDiskUsage = du_table['diskUsageG'].iloc[0]
-        print('')
-        print(heading("Project Directory"))
-        print("disk usage (G): {:.2f}".format(totalDiskUsage))
-
-
 if __name__ == '__main__':
     if not CACHE_DIR.exists():
-        log.info("Running for first time, might take a few minutes to generate cache.")
+        log.info("Running for the first time, might take a few minutes to generate the cache files.")
         CACHE_DIR.mkdir()
-    import pnldash_lib.ls
-    App.subcommand("ls", pnldash_lib.ls.Ls)
+    import pnldash_cli.ls
+    import pnldash_cli.init
+    import pnldash_cli.db.push
+    import pnldash_cli.status
+    App.subcommand("status", pnldash_cli.status.Status)
+    App.subcommand("ls", pnldash_cli.ls.Ls)
+    App.subcommand("init", pnldash_cli.init.Init)
+    Db.subcommand("push", pnldash_cli.db.push.Push)
     App.run()

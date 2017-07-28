@@ -1,5 +1,5 @@
 import os
-from .db import get_db_dir, get_project_dirs, get_project_dirs, spliturl
+from .db import open_db, get_db_url
 from .readyml import *
 from .csvs import make_csvs
 from .extra import make_extra
