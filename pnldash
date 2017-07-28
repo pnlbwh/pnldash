@@ -78,10 +78,14 @@ if __name__ == '__main__':
         CACHE_DIR.mkdir()
     import pnldash_cli.ls
     import pnldash_cli.init
-    import pnldash_cli.db.push
     import pnldash_cli.status
+    import pnldash_cli.db
     App.subcommand("status", pnldash_cli.status.Status)
     App.subcommand("ls", pnldash_cli.ls.Ls)
     App.subcommand("init", pnldash_cli.init.Init)
-    Db.subcommand("push", pnldash_cli.db.push.Push)
+    Db.subcommand("push", pnldash_cli.db.Push)
+    Db.subcommand("list", pnldash_cli.db.List)
+    Db.subcommand("info", pnldash_cli.db.Info)
+    Db.subcommand("make", pnldash_cli.db.Make)
+    Db.subcommand("open", pnldash_cli.db.Open)
     App.run()

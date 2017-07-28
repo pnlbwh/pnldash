@@ -72,7 +72,7 @@ class Ls(cli.Application):
             placeholder = pipeline['paths']['caseid']
             for caseid in caseids:
                 globpath = template_path.replace(placeholder, caseid)
-                paths = glob.glob(globpath)
+                paths = glob.glob(globpath) or [template_path]
                 for path in paths:
                     path = local.path(path)
                     if self.print_missing == path.exists() and not self.print_all:

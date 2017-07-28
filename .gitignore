@@ -1,0 +1,6 @@
+_*
+*.pyc
+caselist.txt
+#.*
+inputPaths.yml
+!__init__.py

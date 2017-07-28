@@ -18,7 +18,7 @@ def get_db_url(urlstr=None):
 
 @contextmanager
 def open_db(urlstr=None):
-    url = _get_db_url(urlstr)
+    url = get_db_url(urlstr)
     if url.scheme:
         machine = SshMachine(url.hostname, user=url.username, port=url.port)
     else:

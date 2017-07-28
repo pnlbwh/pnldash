@@ -1,0 +1,6 @@
+
+* BUG: make push expand ./caselist.txt
+* ENH: make `update` work with distributed projects
+* ENH: add 'withpaths' option, similar to what i have in bash right now
+  it would have to be: eval `pnldash env`
+* validate pnldash.yml (in csvs.py for example)
