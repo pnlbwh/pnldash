@@ -3,14 +3,14 @@ log = logging.getLogger(__name__)
 from plumbum import cli, local, FG
 from plumbum.path.utils import copy, gui_open
 from pnldash_config import *
-from pnldash_lib import open_db
+from pnldash_lib import open_db, make_extra
 import yaml
 
 
 PNLDASH_FILES = [PROJECT_YML, PATHS_CSV, PARAMS_CSV, EXTRA_CSV, DU_CSV]
 
 class Push(cli.Application):
-    """Copies pnldash.yml and .pnldash/* to central project database"""
+    """Adds your project to the central database."""
 
     def main(self):
         make_extra()
@@ -23,7 +23,7 @@ class Push(cli.Application):
             print('to {}'.format(url))
 
 
-class Make(cli.Application):
+class Report(cli.Application):
     """Make HTML dashboard report."""
 
     def main(self):
@@ -31,7 +31,7 @@ class Make(cli.Application):
         Rcmd = "library('rmarkdown'); render('pnldashboard.Rmd')"
 
         with open_db() as (url, machine, dbpath):
-            log.info('Make dashboard')
+            log.info("Make dashboard for database at '{}'".format(url))
             with machine.cwd(dbpath):
                 _ = machine['R']('-e', Rcmd)
             copy(dbpath / 'pnldashboard.html', local.cwd)
@@ -52,7 +52,7 @@ class Open(cli.Application):
 
 
 class List(cli.Application):
-    """List the project names in the central database"""
+    """List the projects in the central database"""
 
     def main(self):
         PROJECT_YML_FILENAME = PROJECT_YML.name
@@ -69,7 +69,7 @@ class List(cli.Application):
 
 
 class Info(cli.Application):
-    """Show the project.yml contents for a project."""
+    """Show a project's description"""
 
     def main(self, name):
         PROJECT_YML_FILENAME = PROJECT_YML.name
