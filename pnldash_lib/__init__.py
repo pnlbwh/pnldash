@@ -1,5 +1,5 @@
 import os
-from .db import open_db, get_db_url
+from .db import open_db
 from .readyml import *
 from .csvs import make_csvs
 from .extra import make_extra

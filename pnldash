@@ -1,21 +1,16 @@
 #!/usr/bin/env python
 from __future__ import print_function
-from plumbum import cli, local, FG, SshMachine
+from plumbum import cli, local
 from pnldash_config import *
-import csv
-import yaml
 import sys
-from plumbum.path.utils import copy
 from pnldash_lib import *
-from os.path import exists
 from signal import signal, SIGPIPE, SIG_DFL
-signal(SIGPIPE,SIG_DFL)
+signal(SIGPIPE, SIG_DFL)  # handle "Broken pipe"
 
 import logging
 logging.basicConfig(
-            level=logging.INFO,
-            format='%(levelname)s:%(name)s: %(message)s',
-            datefmt="%Y-%m-%d %H:%M")
+    level=logging.INFO,
+    format='%(levelname)s:%(name)s: %(message)s')
 log = logging.getLogger(__name__)
 
 
@@ -38,7 +33,6 @@ class Db(cli.Application):
         if not self.nested_command:
             print("No command given")
             return 1
-
 
 
 @App.subcommand("find")
@@ -74,7 +68,8 @@ class Extra(cli.Application):
 
 if __name__ == '__main__':
     if not CACHE_DIR.exists():
-        log.info("Running for the first time, might take a few minutes to generate the cache files.")
+        log.info(
+            "Running for the first time, might take a few minutes to generate the cache files.")
         CACHE_DIR.mkdir()
     import pnldash_cli.ls
     import pnldash_cli.init
