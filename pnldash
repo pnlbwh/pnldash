@@ -80,11 +80,13 @@ if __name__ == '__main__':
     import pnldash_cli.init
     import pnldash_cli.status
     import pnldash_cli.info
+    import pnldash_cli.env
     import pnldash_cli.db
     App.subcommand("status", pnldash_cli.status.Status)
     App.subcommand("init", pnldash_cli.init.Init)
     App.subcommand("ls", pnldash_cli.ls.Ls)
     App.subcommand("info", pnldash_cli.info.Info)
+    App.subcommand("env", pnldash_cli.env.Env)
 
     Db.subcommand("push", pnldash_cli.db.Push)
     Db.subcommand("list", pnldash_cli.db.List)

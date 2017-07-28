@@ -72,20 +72,22 @@ def formatTable(ds, header=None):
         result = result + (formatStr.format(*item)) + '\n'
     return result
 
+
 def printTable(ds, header=None):
     print(formatTable(ds, header))
+
 
 class List(cli.Application):
     """List the projects in the central database"""
 
-    useCache = cli.Flag(['-c', '--cache'], default=False,
-                        help="Use cached result.")
+    useCache = cli.Flag(
+        ['-c', '--cache'], default=False, help="Use cached result.")
 
     def main(self):
         PROJECT_YML_FILENAME = PROJECT_YML.name
 
         #TODO refresh cache after a certain time
-        cache = local.path(__file__).dirname / '.dblist.yml'
+        cache = local.path(__file__).dirname / '.dblist'
         if self.useCache and cache.exists():
             with open(cache, 'r') as f:
                 print(f.read())
@@ -101,11 +103,11 @@ class List(cli.Application):
                 numpipelines = len(yml['pipelines'])
                 row = {'name': yml['name'],
                        'directory': projdir,
-                       'num. pipelines': numpipelines
-                       }
+                       'num. pipelines': numpipelines}
                 result.append(row)
 
-        result = formatTable(result, header=['name', 'directory', 'num. pipelines'])
+        result = formatTable(
+            result, header=['name', 'directory', 'num. pipelines'])
         with open(cache, 'w') as f:
             f.write(result)
         print(result)
