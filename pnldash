@@ -45,6 +45,7 @@ class Db(cli.Application):
 
 @App.subcommand("find")
 class Find(cli.Application):
+    """Crawls project directory for image files and saves the result to a cache file."""
 
     echo = cli.Flag(
         ['-e', '--echo'], default=False, help="Print files to stdout as well")
@@ -53,9 +54,9 @@ class Find(cli.Application):
         make_find(self.echo, useCache=False)
 
 
-@App.subcommand("paths")
+@App.subcommand("makepaths")
 class Paths(cli.Application):
-    """Updates pipeline paths (use if newly generated paths available)"""
+    """Updates pipeline paths (use if newly generated pipeline paths available)"""
 
     def main(self):
         PATHS_CSV.delete()
@@ -78,13 +79,16 @@ if __name__ == '__main__':
     import pnldash_cli.ls
     import pnldash_cli.init
     import pnldash_cli.status
+    import pnldash_cli.info
     import pnldash_cli.db
     App.subcommand("status", pnldash_cli.status.Status)
-    App.subcommand("ls", pnldash_cli.ls.Ls)
     App.subcommand("init", pnldash_cli.init.Init)
+    App.subcommand("ls", pnldash_cli.ls.Ls)
+    App.subcommand("info", pnldash_cli.info.Info)
+
     Db.subcommand("push", pnldash_cli.db.Push)
     Db.subcommand("list", pnldash_cli.db.List)
     Db.subcommand("info", pnldash_cli.db.Info)
-    Db.subcommand("make", pnldash_cli.db.Report)
+    Db.subcommand("report", pnldash_cli.db.Report)
     Db.subcommand("open", pnldash_cli.db.Open)
     App.run()

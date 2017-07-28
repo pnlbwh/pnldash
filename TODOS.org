@@ -1,5 +1,7 @@
 
 * BUG: make push expand ./caselist.txt
+* STY: improve init's temmplate
+* ENH: add 'env' command
 * ENH: make `update` work with distributed projects
 * ENH: add 'withpaths' option, similar to what i have in bash right now
   it would have to be: eval `pnldash env`

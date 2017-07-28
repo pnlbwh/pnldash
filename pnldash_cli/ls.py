@@ -5,8 +5,10 @@ import sys
 from pnldash_lib.csvs import readCaselist
 import glob
 
+
 def _print(s=''):
     print(s, file=sys.stderr)
+
 
 def _printVertical(d, prepend='', keys=None, fd=sys.stderr):
     if not keys:
@@ -20,9 +22,8 @@ class Ls(cli.Application):
     paramid = cli.SwitchAttr(
         ['-p', '--paramid'],
         int,
-        default=0,
-        help="The index of the pipeline whose paths you want")
-
+        default=None,
+        help="The index of the pipeline in pnldash.yml whose paths you want")
 
     print_csv = cli.Flag(
         ['-c', '--csv'],
@@ -32,7 +33,7 @@ class Ls(cli.Application):
     print_caseid_only = cli.Flag(
         ['-s', '--subjid'],
         excludes=['-c'],
-        help="Print subject ids instead of paths")
+        help="Print case/subject ids instead of paths")
 
     ignore_caseids = cli.SwitchAttr(
         ['-e', '--except'], default="", help="Ignore this list of caseids")
@@ -50,24 +51,42 @@ class Ls(cli.Application):
         help="Print file path whether it exists or not")
 
     def main(self, tag):
+        if tag == 'caseid' or tag == 'caselist':
+            print("Not a valid tag")
+            sys.exit(1)
+
         ignore_caseids = self.ignore_caseids.split()
         if len(ignore_caseids) == 1 and './' in ignore_caseids[0]:
             ignore_caseids = interpret_caseids(ignore_caseids[0])
 
         yml = read_project_yml()
+        num = len(yml['pipelines'])
+
+        if self.paramid >= num:
+            print(
+                "paramid '{}' is greater than number of pipelines in pnldash.yml: {}".format(
+                    self.paramid, num))
+            print("Must be one of: {}".format(' '.join(map(str, range(num)))))
+            sys.exit(1)
 
         for paramid, pipeline in enumerate(yml['pipelines']):
-            if self.paramid != paramid:
+            if self.paramid  and self.paramid != paramid:
                 continue
+            if not self.paramid and tag not in pipeline['paths'].keys():
+                continue
+
             caseids = readCaselist(pipeline['paths']['caselist'])
             combo = {k:v for (k,v) in pipeline['parameters'].items() \
                      if k not in ['caseid', 'caselist']}
-            _print()
-            print("## Parameter Combination {} ({} cases)".format(
-                paramid, len(caseids)), file=sys.stderr)
+            print(
+                "## Pipeline {} ({} cases)".format(paramid,
+                                                                len(caseids)),
+                file=sys.stderr)
+            _print("Parameters:")
             _printVertical(combo)
             print('', file=sys.stderr)
 
+            _print("Paths:")
             template_path = pipeline['paths'][tag]
             placeholder = pipeline['paths']['caseid']
             for caseid in caseids:
@@ -75,7 +94,8 @@ class Ls(cli.Application):
                 paths = glob.glob(globpath) or [globpath]
                 for path in paths:
                     path = local.path(path)
-                    if self.print_missing == path.exists() and not self.print_all:
+                    if self.print_missing == path.exists(
+                    ) and not self.print_all:
                         continue
                     if self.print_caseid_only:
                         print('{}'.format(caseid))
@@ -83,3 +103,4 @@ class Ls(cli.Application):
                     if self.print_csv:
                         sys.stdout.write('{},'.format(caseid))
                     print(path)
+            _print()
