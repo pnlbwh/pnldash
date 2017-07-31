@@ -1,5 +1,6 @@
 from __future__ import print_function
 import logging
+import yaml
 log = logging.getLogger(__name__)
 from plumbum import cli, local, FG
 from plumbum.path.utils import copy, gui_open

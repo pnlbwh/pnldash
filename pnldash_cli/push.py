@@ -21,9 +21,9 @@ class Push(cli.Application):
 
         make_extra()
 
+
         with open_db() as (url, machine,
-                           dbpath), local.tempdir() as tmpdir, open(
-                               tmpdir / '.yml', 'w') as f:
+                dbpath), local.tempdir() as tmpdir:
             # expand caselist as it's usually a text file
             yml = read_project_yml()
             pipelines = yml['pipelines']
@@ -31,12 +31,19 @@ class Push(cli.Application):
                 pipeline['paths']['caselist'] = readCaselist(pipeline['paths'][
                     'caselist'])
             yml['pipelines'] = pipelines
-            yaml.dump(yml, f, default_flow_style=False)
+
+            tmpyml = tmpdir / 'pnldash.yml'
+            with open(tmpyml, 'w') as f:
+                yaml.dump(yml, f, default_flow_style=False)
+
+            if not (tmpyml).exists():
+                raise Exception('Error: could not write out temporary yaml file: {}'.format(tmpyml))
 
             destdir = dbpath / (local.cwd.replace('/', '---')[3:])
             log.info('Copy files to central database...')
             copy(PNLDASH_FILES, destdir)
-            copy(tmpdir / '.yml', destdir)
+            copy(tmpyml, destdir)
             print("Copied")
             print('\n'.join(PNLDASH_FILES))
+            print(tmpyml)
             print('to {}'.format(url))
