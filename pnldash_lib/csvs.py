@@ -14,8 +14,28 @@ log = logging.getLogger(__name__)
 
 PARAM_HDR = ['projectPath', 'name', 'grantId', 'description', 'pipelineId',
              'pipelineDescription', 'param', 'paramValue']
+
 PATH_HDR = ['projectPath', 'pipelineId', 'pathKey', 'caseid', 'path', 'sizeMB',
             'modtime', 'modtimeStr', 'exists']
+
+
+
+def get_provenance_file(fn):
+    prov = local.path(fn + '.provenance')
+    if local.path(fn).exists():
+        return [prov]
+    return []
+
+def get_nifti_assoc(nii):
+    nii = local.path(nii)
+    bvec = nii.with_suffix('.bvec', depth=2)
+    bval = nii.with_suffix('.bval', depth=2)
+    return [f for f in [bvec, bval] if f.exists()]
+
+
+ASSOC_FILES = {'.nii.gz': get_nifti_assoc,
+               '': get_provenance_file}
+
 
 def concat(l):
     return l if l == [] else [item for sublist in l for item in sublist]
@@ -87,6 +107,8 @@ def make_csvs():
                         paths = glob.glob(path)  # could be a glob pattern
                         if not paths:  # no glob
                             paths = [path]
+                        for ext, getassoc in ASSOC_FILES.items():
+                            paths.extend(getassoc(path))
                         for path in paths:
                             mtime = None
                             mtimeStr = None

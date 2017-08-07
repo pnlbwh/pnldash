@@ -1,8 +1,8 @@
 
-* BUG: make push expand ./caselist.txt
+* ENH: add sync option
+  e.g. pnldash db sync intrust [-t "dwied dwiharm"] [-n <num>] [-s "<case1 case2 ...>"] -o <data_dir>
+  e.g. pnldash db sync intrust [--dry] [-t "dwied dwiharm"] [-n <num>] [-s "<case1 case2 ...>"] -o <data_dir>
+* enh: add associated files in paths.csv, like .bvec, and .bval files
 * STY: improve init's temmplate
-* ENH: add 'env' command
-* ENH: make `update` work with distributed projects
-* ENH: add 'withpaths' option, similar to what i have in bash right now
-  it would have to be: eval `pnldash env`
 * validate pnldash.yml (in csvs.py for example)
+* ENH: make `update` work with distributed projects
