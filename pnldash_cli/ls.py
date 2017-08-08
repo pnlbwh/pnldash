@@ -3,6 +3,7 @@ from plumbum import cli, local
 from pnldash_lib import read_project_yml
 import sys
 from pnldash_lib.csvs import readCaselist
+from . import ParamApp
 import glob
 
 
@@ -17,13 +18,7 @@ def _printVertical(d, prepend='', keys=None, fd=sys.stderr):
         fd.write("{}{:<25} {:<15}".format(prepend, k, d[k]) + '\n')
 
 
-class Ls(cli.Application):
-
-    paramid = cli.SwitchAttr(
-        ['-p', '--paramid'],
-        int,
-        default=None,
-        help="The index of the pipeline in pnldash.yml whose paths you want")
+class Ls(ParamApp):
 
     print_csv = cli.Flag(
         ['-c', '--csv'],
@@ -60,16 +55,9 @@ class Ls(cli.Application):
             ignore_caseids = interpret_caseids(ignore_caseids[0])
 
         yml = read_project_yml()
-        num = len(yml['pipelines'])
+        self.validate(len(yml['pipelines']))
 
-        if self.paramid >= num:
-            print(
-                "paramid '{}' is greater than number of pipelines in pnldash.yml: {}".format(
-                    self.paramid, num))
-            print("Must be one of: {}".format(' '.join(map(str, range(num)))))
-            sys.exit(1)
-
-        for paramid, pipeline in enumerate(yml['pipelines']):
+        for paramid, pipeline in enumerate(yml['pipelines'],1):
             if self.paramid  and self.paramid != paramid:
                 continue
             if not self.paramid and tag not in pipeline['paths'].keys():
