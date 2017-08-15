@@ -42,7 +42,7 @@ pipelines:
         t1xc: _data/003_GNX_007/std_t1xc0.nrrd
         fsindwi: _data/003_GNX_007/std_fsindwi0.nii.gz
         dwi: _data/003_GNX_007/std_dwi0.nhdr
-        caseid: 003_GNX_007
+        caseid_placeholder: 003_GNX_007
         caselist: ./caselist.txt
 """.format(local.cwd.name.__str__())
 

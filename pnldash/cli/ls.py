@@ -76,7 +76,7 @@ class Ls(ParamApp):
 
             _print("Paths:")
             template_path = pipeline['paths'][tag]
-            placeholder = pipeline['paths']['caseid']
+            placeholder = pipeline['paths']['caseid_placeholder']
             for caseid in caseids:
                 globpath = template_path.replace(placeholder, caseid)
                 paths = glob.glob(globpath) or [globpath]

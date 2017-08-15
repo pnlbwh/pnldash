@@ -4,10 +4,10 @@ from plumbum import cli, local
 import sys
 from signal import signal, SIGPIPE, SIG_DFL
 signal(SIGPIPE, SIG_DFL)  # handle "Broken pipe"
-
-sys.path.insert(0, '../pnldash')
-from pnldash.config import *
+import os.path
+sys.path.insert(0, os.path.dirname(__file__) + '/..')
 import pnldash
+from pnldash.config import *
 
 import logging
 logging.basicConfig(

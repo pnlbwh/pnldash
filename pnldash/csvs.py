@@ -19,7 +19,6 @@ PATH_HDR = ['projectPath', 'pipelineId', 'pathKey', 'caseid', 'path', 'sizeMB',
             'modtime', 'modtimeStr', 'exists']
 
 
-
 def get_provenance_file(fn):
     prov = local.path(fn + '.provenance')
     if local.path(fn).exists():
@@ -92,7 +91,7 @@ def make_csvs():
                          yml['description'], pipelineId,
                          pipeline['description'], param, paramVal])
                 caseids = readCaselist(pipeline['paths']['caselist'])
-                caseidString = pipeline['paths']['caseid']
+                caseidString = pipeline['paths']['caseid_placeholder']
                 if not isinstance(caseidString, unicode):
                     raise Exception(
                         "caseid field needs to be in quotes to protect its value: TODO force read yml fields as strings")

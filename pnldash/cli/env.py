@@ -39,7 +39,7 @@ class Env(ParamApp):
         print('')
 
         paths = yml['pipelines'][self.paramid-1]['paths']
-        placeholder = paths['caseid']
+        placeholder = paths['caseid_placeholder']
 
         print("export root={}".format(projectdir))
         for key, pathtemplate in paths.items():
