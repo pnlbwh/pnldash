@@ -9,13 +9,13 @@ dashboard can be generated for all your projects.
 
 - [Setup](#setup)
 - [Quick Overview](#quick-overview)
-    - [Individual Project](#individual-project)
+    - [Project Directory Interface](#project-directory-interface)
     - [Central Database Interface](#central-database-interface)
 - [Details](#details)
     - [`pnldash.yml`](#pnldashyml)
     - [Cached files](#cached-files)
     - [Extra files](#extra-files)
-    - [Workflow](#workflow)
+    - [Typical Workflow](#typical-workflow)
     - [The Central Database](#the-central-database)
 
 <!-- markdown-toc end -->
@@ -23,22 +23,23 @@ dashboard can be generated for all your projects.
 
 # Setup
 
-cd /software/dir
-git clone https://github.com/reckbo/pnldash
-export PNLDASH_DB=/software/dir/pnldash/db
-export PATH=$PATH:/software/dir/pnldash/scripts
-installdb.py  # makes $PNLDASH_DB directory and copies pnldashboard.Rmd to it
+    cd /software/dir
+    git clone https://github.com/reckbo/pnldash
+    export PNLDASH_DB=/software/dir/pnldash/db
+    export PATH=$PATH:/software/dir/pnldash/scripts
+    installdb.py  # makes $PNLDASH_DB directory and copies pnldashboard.Rmd to it
 
 
 # Quick Overview
 
-## Individual Project
+## Project Directory Interface
 
     cd /project/dir
     pnldash init # makes a template pnldash.yml
     # edit pnldash.yml
     pnldash status # prints disk usage and each pipeline's progress
-    pnldash push # pushes summary to the central database
+    pnldash extra # prints large extraneous image files
+    pnldash push # pushes project information to the central database
 
 ## Central Database Interface
 
@@ -51,65 +52,65 @@ installdb.py  # makes $PNLDASH_DB directory and copies pnldashboard.Rmd to it
 
 ## `pnldash.yml`
 
-This is a [yaml](http://www.yaml.org/start.html) file that describes your
-project's output paths and parameters.  It must have the fields `name`,
-`grantId`, `description`, and `pipelines`. `pipelines` is a list of
-of dictionaries that describe each of your data processing pipelines.
-Each pipeline has a description, a list of parameters, and a list of
-template output paths that the pipeline has generated/will generate.
-For example:
+`pnldash.yml` is a [yaml](http://www.yaml.org/start.html) file that you write to
+describe your project's output paths and parameters, and is what `pnldash` uses
+to compute information for your project. It must have the fields `name`,
+`grantId`, `description`, and `pipelines`. `pipelines` is a list of dictionaries
+that describe each of your data processing pipelines. Each pipeline has a
+description, a list of parameters, and a list of template output paths that the
+pipeline has generated/will generate. For example:
 
-  name: test-project
+    name: test-project
 
-  grantId: ''
+    grantId: ''
 
-  description: |
-      This is my project that investigates the effects of x on y.
+    description: |
+        This is my project that investigates the effects of x on y.
 
-  pipelines:
-      - description: |
-          This is my raw data.
+    pipelines:
+        - description: |
+            This is my raw data.
 
-        parameters:
-          scanner: Siemens
+          parameters:
+            scanner: Siemens
 
-        paths:
-          dwi: rawdata/001/001-dwi.nrrd
-          caseid_placeholder: 001
-          caselist: ./caselist.txt
+          paths:
+            dwi: rawdata/001/001-dwi.nrrd
+            caseid_placeholder: 001
+            caselist: ./caselist.txt  # this can also be a list like [001, 002]
 
 
-      - description: |
-          Output from the standard PNL pipeline.
+        - description: |
+            Output from the standard PNL pipeline.
 
-          Meaning of path keys:
-          fs:      freesurfer subject directory
-          dwied:   eddy corrected DWI
-          dwimask: FSL bet generated DWI mask
-          etc.
+            Meaning of path keys:
+            fs:      freesurfer subject directory
+            dwied:   eddy corrected DWI
+            dwimask: FSL bet generated DWI mask
+            etc.
 
-        parameters:
-              version_FreeSurfer: 5.3.0
-              hash_UKFTractography: 421a7ad
-              hash_tract_querier: e045eab
-              hash_BRAINSTools: 41353e8
-              hash_trainingDataT1AHCC: d6e5990
+          parameters:
+                version_FreeSurfer: 5.3.0
+                hash_UKFTractography: 421a7ad
+                hash_tract_querier: e045eab
+                hash_BRAINSTools: 41353e8
+                hash_trainingDataT1AHCC: d6e5990
 
-        paths:
-          fs: _data/003_GNX_007/freesurfer/*/* # use glob patterns to select multiple files
-          dwied: _data/003_GNX_007/std_dwied0.nrrd
-          dwimask: _data/003_GNX_007/std_dwimask0.nrrd
-          t1mask: _data/003_GNX_007/std_t1mask0.nrrd
-          t1: _data/003_GNX_007/std_t10.nrrd
-          wmql: _data/003_GNX_007/wmql/*.vtk
-          tractmeasures: _data/003_GNX_007/std_tractmeasures0.csv
-          dwixc: _data/003_GNX_007/std_dwixc0.nrrd
-          ukf: _data/003_GNX_007/std_ukf0.vtk
-          t1xc: _data/003_GNX_007/std_t1xc0.nrrd
-          fsindwi: _data/003_GNX_007/std_fsindwi0.nii.gz
-          dwi: _data/003_GNX_007/std_dwi0.nhdr
-          caseid_placeholder: 003_GNX_007
-          caselist: ./caselist.txt
+          paths:
+            fs: _data/003_GNX_007/freesurfer/*/* # use a glob pattern to select multiple files
+            dwied: _data/003_GNX_007/std_dwied0.nrrd
+            dwimask: _data/003_GNX_007/std_dwimask0.nrrd
+            t1mask: _data/003_GNX_007/std_t1mask0.nrrd
+            t1: _data/003_GNX_007/std_t10.nrrd
+            wmql: _data/003_GNX_007/wmql/*.vtk # use a glob pattern to select multiple files
+            tractmeasures: _data/003_GNX_007/std_tractmeasures0.csv
+            dwixc: _data/003_GNX_007/std_dwixc0.nrrd
+            ukf: _data/003_GNX_007/std_ukf0.vtk
+            t1xc: _data/003_GNX_007/std_t1xc0.nrrd
+            fsindwi: _data/003_GNX_007/std_fsindwi0.nii.gz
+            dwi: _data/003_GNX_007/std_dwi0.nhdr
+            caseid_placeholder: 003_GNX_007
+            caselist: ./caselist.txt
 
 ## Cached files
 
@@ -120,23 +121,24 @@ When you run `pnldash status`, these cached files are made:
     .pnldash/all_image_files.txt
 
 `.pnldash/all_image_files.txt` is a list of all the image files it finds.
-The defaults are
+The defaults extensions are
 
     DEFAULT_EXTS = ['.nrrd', '.nii.gz', '.nii', '.vtk', '.nhdr', '.mgz', '.dcm',
                 '.dcm.gz', '.IMA', '.IMA.gz', '.bval', '.bvec']
 
-which you can override in `pnldash/config.py`.  Once this cached file exists
+which you can override in `pnldash/config.py`. Once this cached file exists
 `pnldash status` will use this file instead of crawling your project directory
-again, since this may take a long time.  If you know that more files have
-been added to your project directory, you can update this file by running
+again, since this may take a long time. If you know that more files have been
+added to your project directory, or some files have been removed, you can update
+this file by running
 
     pnldash find
 
-Similarly, `.pnldash/paths.csv` (and `.pnldash/params.csv`) are reused by
-`pnldash status` once they have been generated. These cache files record all the
-pipeline paths specified in your `pnldash.yml` file, and may take a long time to
-generate if your project directory is large. When you know that more pipeline
-files have been made, you can update them by running
+Similarly, `.pnldash/paths.csv` and `.pnldash/params.csv` are reused by `pnldash
+status` once they have been generated. These cache csvs record all the pipeline
+paths and parameters specified in your `pnldash.yml` file, and may take a while
+to generate if your project directory is large. When you know that more
+pipeline files have been made, you can update them by running
 
     pnldash makepaths
 
@@ -152,23 +154,24 @@ run
 If you see some paths that should be part of your project, edit `pnldash.yml`
 and add them to your pipelines. `pnldash extra` should now no longer show them.
 
-## Workflow
+## Typical Workflow
 
-Typically, you'll write your `pnldash.yml` and run `pnldash status` and
-`pnldash extra` to see what extraneous files are detected and to get an overview
+Typically, you'll write `pnldash.yml` and then run `pnldash status` and
+`pnldash extra` to see what extraneous files are detected, and to get an overview
 of your pipeline outputs.  Usually you'll notice some files that should
 be part of your project, so you'll edit `pnldash.yml` to add those paths to one
-or more of your pipelines, and then run `pnldash extra` again.  Once you're satisfied
+or more of your pipelines, and then run `pnldash extra` once again.  Once you're satisfied
 that all of your project files are accounted for, you can begin to delete some of
 the extraneous files.  For example, to delete all the extraneous vtk files:
 
     pnldash extra | grep -E '\.vtk$' | xargs rm
 
-After this you'll have to update the cached `.pnldash/all_image_files.txt` again
-by running `pnldash find`. Then `pnldash status` and `pnldash extra` will no
-longer include the extraneous files.
+To update the result of `pnldash extra` and `pnldashs status` you need to update
+the cached `.pnldash/all_image_files.txt` by running `pnldash find`. Then
+`pnldash status` and `pnldash extra` will no longer include the extraneous
+files.
 
-So a typical workflow looks like this:
+So, a typical workflow looks like this:
 
     pnldash init
     # edit pnldash.yml
@@ -188,3 +191,22 @@ When all looks good, you can submit your project to the central database:
 
 
 ## The Central Database
+
+The central database stores the information from every project that uses
+`pnldash push`.  You can see a list of projects by running
+
+    pnldash db list
+
+The main point of the database is to get a dashboard of all projects,
+summarizing their pipelines, parameters, and disk usage efficiency.
+To generate the dashboard, run
+
+
+    pnldash db report
+
+This makes `pnldashboard.html` which you can open in a browser. Even
+easier is to generate the dashboard and open it with one command:
+
+
+    pnldash db open # or,
+    pnldash db open -r  # overwrites current pnldashboard.html if it exists
