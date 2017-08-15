@@ -24,24 +24,26 @@ class Status(cli.Application):
             print("No unaccounted files found.")
         print('')
 
-        paths_table = pd.read_csv(PATHS_CSV)
-        from numpy import count_nonzero
-        # agg = {'path': 'count', 'sizeMB': 'sum', 'exists': 'sum'}
-        # agg = {'sizeMB': {'sizeMB':'sum'},
-        #         'exists': {'exists': count_nonzero, 'missing': lambda x: count_nonzero(~x) },
-        #        'path': {'total': 'count'}
-        #         }
-        missing = lambda x: count_nonzero(~x)
-
-        agg = {'sizeMB': ['sum'],
-               'exists': [count_nonzero, missing],
-               'path': ['count']}
-        st = paths_table.groupby(['pipelineId', 'pathKey']).agg(agg)
-        st['sizeG'] = st['sizeMB'] / 1024.0
-        # st.rename(columns={'path':'total'}, inplace=True)
         print(_heading('Pipeline Files'))
-        # print(st.to_string(index=False))
-        print(st.to_string())
+        paths_table = pd.read_csv(PATHS_CSV)
+        agg = {
+            'exists': {'completed': 'sum',
+                       'missing': lambda x: (~x).sum(),
+                       'total': 'size'},
+            'sizeMB': {'size (G)': lambda x: x.sum()/1024}
+        }
+
+        # suppress pandas FutureWarning regarding nested dictionary aggregations until
+        # a replacement solution is found
+        import warnings
+        warnings.simplefilter(action='ignore', category=FutureWarning)
+
+        st = paths_table.groupby(['pipelineId', 'pathKey']).agg(agg)
+        st.columns = st.columns.droplevel(0)
+        st.reset_index()
+        st['completed'] = st['completed'].astype(int)
+        print(st)
+
         pipelineDiskUsage = paths_table['sizeMB'].sum() / 1024.0
         print("disk usage (G): {:.2f}".format(pipelineDiskUsage))
 

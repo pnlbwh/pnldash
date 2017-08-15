@@ -96,7 +96,7 @@ def make_csvs():
                     raise Exception(
                         "caseid field needs to be in quotes to protect its value: TODO force read yml fields as strings")
                 for pathKey, pathTemplate in pipeline['paths'].items():
-                    if pathKey == 'caselist' or pathKey == 'caseid':
+                    if pathKey == 'caselist' or pathKey == 'caseid_placeholder':
                         continue
                     # ignore input files from outside the project directory
                     if not local.path(pathTemplate).startswith(local.cwd):
