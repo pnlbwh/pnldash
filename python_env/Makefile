@@ -11,7 +11,7 @@ _venv: requirements.txt
 	@echo "Now run 'source $@/bin/activate'"
 
 _pip_packages.nix: requirements.txt
-	if [ ! -d "python_env/_pip2nix" ]; then \
+	if [ ! -d "_pip2nix" ]; then \
 		git clone https://github.com/acowley/pip2nix _pip2nix; \
   fi
 	cd _pip2nix; nix-shell --run 'pip2nix ../requirements.txt -o ../_pip_packages.nix'
