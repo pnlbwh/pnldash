@@ -4,8 +4,8 @@ import yaml
 log = logging.getLogger(__name__)
 from plumbum import cli, local, FG
 from plumbum.path.utils import copy, gui_open
-from pnldash_config import *
-from pnldash_lib import open_db, make_extra
+from ...config import *
+from ... import open_db, make_extra
 
 
 class Report(cli.Application):

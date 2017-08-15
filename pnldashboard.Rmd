@@ -18,7 +18,7 @@ library(magrittr)
 library(flexdashboard)
 library(knitr)
 PATHS <- '*/paths.csv' %>% Sys.glob %>% lapply(fread) %>% rbindlist
-EXTRA <- '*/unaccounted_files.csv' %>% Sys.glob %>% lapply(fread) %>% rbindlist
+EXTRA <- '*/unaccounted_files.csv' %>% Sys.glob %>% lapply(fread,colClasses = c('character', 'character', 'double')) %>% rbindlist
 DU <- '*/du.csv' %>% Sys.glob %>% lapply(fread) %>% rbindlist
 PARAMS <- '*/params.csv' %>% Sys.glob %>% lapply(fread) %>% rbindlist
 ```
@@ -30,7 +30,7 @@ Overview
 #TODO handle empty project paths
 PATHS.byProject = PATHS[PATHS[,exists] & ! path %like% '\\.\\./.*', .('project files (G)'=sum(sizeMB)/1024),by=projectPath]
 EXTRA.byProject = EXTRA[,.('extra files (G)'=sum(sizeMB)/1024), by=projectPath]
-SPACE_TABLE.a = merge(PATHS.byProject, EXTRA.byProject, by="projectPath")
+SPACE_TABLE.a = merge(PATHS.byProject, EXTRA.byProject, all.x=T, by="projectPath")
 SPACE_TABLE = merge(SPACE_TABLE.a, DU, by="projectPath")[,'total directory size (G)':=diskUsageG][,diskUsageG:=NULL]
 DT::datatable(SPACE_TABLE, options = list(bPaginate=F)) %>% DT::formatRound(c('project files (G)', 'extra files (G)', 'total directory size (G)'), 2)
 ```

@@ -1,7 +1,7 @@
 import pandas as pd
 from plumbum import cli, local, FG
-from pnldash_lib import make_extra
-from pnldash_config import *
+from .. import make_extra
+from ..config import *
 
 def _heading(s):
     return s + '\n' + len(s) * '-'

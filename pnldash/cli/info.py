@@ -1,6 +1,6 @@
 from __future__ import print_function
 from plumbum import cli, local
-from pnldash_lib import read_project_yml
+from .. import read_project_yml
 from .ls import readCaselist
 from . import ParamApp
 import sys
@@ -21,6 +21,9 @@ def _printInfo(pipelines, paramid):
 
     numcases = len(readCaselist(pipelines[paramid-1]['paths']['caselist']))
     _print("## Pipeline {} ({} case(s))".format(paramid, numcases))
+    _print("Description:")
+    _print(pipelines[paramid-1]['description'])
+    _print()
     _print("Parameters:")
     _printVertical(pipelines[paramid-1]['parameters'])
     _print()

@@ -5,7 +5,7 @@ import pandas as pd
 import csv
 import os
 from util import getsize
-from pnldash_config import *
+from .config import *
 from .find import make_find
 from .csvs import make_csvs
 import logging

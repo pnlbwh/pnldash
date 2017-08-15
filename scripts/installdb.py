@@ -2,7 +2,9 @@
 
 from plumbum import cli, local
 from plumbum.path.utils import copy
-from pnldash_lib import open_db
+import sys
+sys.path.insert(0, '../pnldash')
+from pnldash import open_db
 import logging
 logging.basicConfig(
     level=logging.INFO,
@@ -13,7 +15,7 @@ log = logging.getLogger(__name__)
 
 class App(cli.Application):
     def main(self):
-        rmd = local.path(__file__).dirname / "pnldashboard.Rmd"
+        rmd = local.path(__file__).dirname / "../pnldashboard.Rmd"
 
         with open_db() as (url, machine, dbpath):
             log.info("Make directory at '{}'".format(url))

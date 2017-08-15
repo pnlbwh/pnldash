@@ -1,0 +1,7 @@
+
+* ENH: add sync option
+  e.g. pnldash db sync intrust [-t "dwied dwiharm"] [-n <num>] [-s "<case1 case2 ...>"] -o <data_dir>
+  e.g. pnldash db sync intrust [--dry] [-t "dwied dwiharm"] [-n <num>] [-s "<case1 case2 ...>"] -o <data_dir>
+* STY: improve init's temmplate
+* validate pnldash.yml (in csvs.py for example)
+* ENH: make `update` work with distributed projects

@@ -1,7 +1,0 @@
-name: pnlpublish
-
-dependencies:
-  - python=2.7
-  - plumbum
-  - pyyaml
-  - pandas

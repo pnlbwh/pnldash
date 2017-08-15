@@ -1,7 +1,7 @@
 from __future__ import print_function
 import yaml
 import sys
-from pnldash_config import *
+from ..config import *
 from plumbum import cli, local, FG
 from collections import OrderedDict
 

@@ -1,8 +1,8 @@
 from __future__ import print_function
 import sys
 from plumbum import cli, local
-from pnldash_config import *
-from pnldash_lib import read_project_yml
+from ..config import *
+from .. import read_project_yml
 from .ls import readCaselist
 from . import ParamApp
 

@@ -1,7 +1,7 @@
 import sys
 import os
 from plumbum import cli, local, FG, SshMachine
-from pnldash_config import PROJECTS_DB_ENV
+from .config import PROJECTS_DB_ENV
 import urlparse
 from contextlib import contextmanager
 

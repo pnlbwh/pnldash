@@ -1,8 +1,8 @@
 from __future__ import print_function
 from plumbum import cli, local, FG
 from plumbum.path.utils import copy, gui_open
-from pnldash_config import *
-from pnldash_lib import open_db, make_extra, read_project_yml
+from ..config import *
+from .. import open_db, make_extra, read_project_yml
 from .ls import readCaselist
 import yaml
 from collections import OrderedDict

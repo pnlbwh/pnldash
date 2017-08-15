@@ -1,11 +1,13 @@
 #!/usr/bin/env python
 from __future__ import print_function
 from plumbum import cli, local
-from pnldash_config import *
 import sys
-from pnldash_lib import *
 from signal import signal, SIGPIPE, SIG_DFL
 signal(SIGPIPE, SIG_DFL)  # handle "Broken pipe"
+
+sys.path.insert(0, '../pnldash')
+from pnldash.config import *
+import pnldash
 
 import logging
 logging.basicConfig(
@@ -51,7 +53,7 @@ class Find(cli.Application):
         ['-e', '--echo'], default=False, help="Print files to stdout as well")
 
     def main(self):
-        make_find(self.echo, useCache=False)
+        pnldash.make_find(self.echo, useCache=False)
 
 
 @App.subcommand("makepaths")
@@ -60,7 +62,7 @@ class Paths(cli.Application):
 
     def main(self):
         PATHS_CSV.delete()
-        make_csvs()
+        pnldash.make_csvs()
 
 
 @App.subcommand("extra")
@@ -69,29 +71,29 @@ class Extra(cli.Application):
 
     def main(self):
         # make sure extra cache file is up to date
-        dfextra = make_extra()
+        dfextra = pnldash.make_extra()
         if dfextra.empty:
             print('No unaccounted files.', file=sys.stderr)
         print('\n'.join(sorted(dfextra['path'].values)))
 
 
 if __name__ == '__main__':
-    import pnldash_cli.ls
-    import pnldash_cli.init
-    import pnldash_cli.status
-    import pnldash_cli.info
-    import pnldash_cli.env
-    import pnldash_cli.push
-    import pnldash_cli.db
-    App.subcommand("status", pnldash_cli.status.Status)
-    App.subcommand("init", pnldash_cli.init.Init)
-    App.subcommand("ls", pnldash_cli.ls.Ls)
-    App.subcommand("info", pnldash_cli.info.Info)
-    App.subcommand("env", pnldash_cli.env.Env)
-    App.subcommand("push", pnldash_cli.push.Push)
+    import pnldash.cli.ls
+    import pnldash.cli.init
+    import pnldash.cli.status
+    import pnldash.cli.info
+    import pnldash.cli.env
+    import pnldash.cli.push
+    import pnldash.cli.db
+    App.subcommand("status", pnldash.cli.status.Status)
+    App.subcommand("init", pnldash.cli.init.Init)
+    App.subcommand("ls", pnldash.cli.ls.Ls)
+    App.subcommand("info", pnldash.cli.info.Info)
+    App.subcommand("env", pnldash.cli.env.Env)
+    App.subcommand("push", pnldash.cli.push.Push)
 
-    Db.subcommand("list", pnldash_cli.db.List)
-    Db.subcommand("info", pnldash_cli.db.Info)
-    Db.subcommand("report", pnldash_cli.db.Report)
-    Db.subcommand("open", pnldash_cli.db.Open)
+    Db.subcommand("list", pnldash.cli.db.List)
+    Db.subcommand("info", pnldash.cli.db.Info)
+    Db.subcommand("report", pnldash.cli.db.Report)
+    Db.subcommand("open", pnldash.cli.db.Open)
     App.run()

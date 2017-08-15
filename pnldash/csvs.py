@@ -7,7 +7,7 @@ import os.path
 import glob
 import time
 from util import getsize
-from pnldash_config import *
+from .config import *
 from . import read_project_yml
 import logging
 log = logging.getLogger(__name__)
