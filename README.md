@@ -1,8 +1,25 @@
-*pnldash* is a tool for tracking your data processing projects.  Once you
-define a meta data file for your project directory it can print out a report
-summarizing data analysis pipelines including disk usage statistics.
-Individual project information are pushed to a central database, and an html
-dashboard is generated for all your projects.
+*pnldash* is a tool for tracking your data processing projects. Once you define
+a meta data file in your project directory you can print a report summarizing
+your pipelines' disk usage, as well as list any large extraneous image files.
+Individual project information can be pushed to a central database, and an html
+dashboard can be generated for all your projects.
+
+<!-- markdown-toc start - Don't edit this section. Run M-x markdown-toc-generate-toc again -->
+**Table of Contents**
+
+- [Setup](#setup)
+- [Quick Overview](#quick-overview)
+    - [Individual Project](#individual-project)
+    - [Central Database Interface](#central-database-interface)
+- [Details](#details)
+    - [`pnldash.yml`](#pnldashyml)
+    - [Cached files](#cached-files)
+    - [Extra files](#extra-files)
+    - [Workflow](#workflow)
+    - [The Central Database](#the-central-database)
+
+<!-- markdown-toc end -->
+
 
 # Setup
 
@@ -13,4 +30,161 @@ export PATH=$PATH:/software/dir/pnldash/scripts
 installdb.py  # makes $PNLDASH_DB directory and copies pnldashboard.Rmd to it
 
 
-# Quick Walkthrough
+# Quick Overview
+
+## Individual Project
+
+    cd /project/dir
+    pnldash init # makes a template pnldash.yml
+    # edit pnldash.yml
+    pnldash status # prints disk usage and each pipeline's progress
+    pnldash push # pushes summary to the central database
+
+## Central Database Interface
+
+    pnldash db list  # list all projects
+    pnldash db info <project>  # shows information for <project>
+    pnldash db report # makes pnldashboard.html
+    pnldash db open # makes and opens pnldashboard.html
+
+# Details
+
+## `pnldash.yml`
+
+This is a [yaml](http://www.yaml.org/start.html) file that describes your
+project's output paths and parameters.  It must have the fields `name`,
+`grantId`, `description`, and `pipelines`. `pipelines` is a list of
+of dictionaries that describe each of your data processing pipelines.
+Each pipeline has a description, a list of parameters, and a list of
+template output paths that the pipeline has generated/will generate.
+For example:
+
+  name: test-project
+
+  grantId: ''
+
+  description: |
+      This is my project that investigates the effects of x on y.
+
+  pipelines:
+      - description: |
+          This is my raw data.
+
+        parameters:
+          scanner: Siemens
+
+        paths:
+          dwi: rawdata/001/001-dwi.nrrd
+          caseid_placeholder: 001
+          caselist: ./caselist.txt
+
+
+      - description: |
+          Output from the standard PNL pipeline.
+
+          Meaning of path keys:
+          fs:      freesurfer subject directory
+          dwied:   eddy corrected DWI
+          dwimask: FSL bet generated DWI mask
+          etc.
+
+        parameters:
+              version_FreeSurfer: 5.3.0
+              hash_UKFTractography: 421a7ad
+              hash_tract_querier: e045eab
+              hash_BRAINSTools: 41353e8
+              hash_trainingDataT1AHCC: d6e5990
+
+        paths:
+          fs: _data/003_GNX_007/freesurfer/*/* # use glob patterns to select multiple files
+          dwied: _data/003_GNX_007/std_dwied0.nrrd
+          dwimask: _data/003_GNX_007/std_dwimask0.nrrd
+          t1mask: _data/003_GNX_007/std_t1mask0.nrrd
+          t1: _data/003_GNX_007/std_t10.nrrd
+          wmql: _data/003_GNX_007/wmql/*.vtk
+          tractmeasures: _data/003_GNX_007/std_tractmeasures0.csv
+          dwixc: _data/003_GNX_007/std_dwixc0.nrrd
+          ukf: _data/003_GNX_007/std_ukf0.vtk
+          t1xc: _data/003_GNX_007/std_t1xc0.nrrd
+          fsindwi: _data/003_GNX_007/std_fsindwi0.nii.gz
+          dwi: _data/003_GNX_007/std_dwi0.nhdr
+          caseid_placeholder: 003_GNX_007
+          caselist: ./caselist.txt
+
+## Cached files
+
+When you run `pnldash status`, these cached files are made:
+
+    .pnldash/paths.csv
+    .pnldash/params.csv
+    .pnldash/all_image_files.txt
+
+`.pnldash/all_image_files.txt` is a list of all the image files it finds.
+The defaults are
+
+    DEFAULT_EXTS = ['.nrrd', '.nii.gz', '.nii', '.vtk', '.nhdr', '.mgz', '.dcm',
+                '.dcm.gz', '.IMA', '.IMA.gz', '.bval', '.bvec']
+
+which you can override in `pnldash/config.py`.  Once this cached file exists
+`pnldash status` will use this file instead of crawling your project directory
+again, since this may take a long time.  If you know that more files have
+been added to your project directory, you can update this file by running
+
+    pnldash find
+
+Similarly, `.pnldash/paths.csv` (and `.pnldash/params.csv`) are reused by
+`pnldash status` once they have been generated. These cache files record all the
+pipeline paths specified in your `pnldash.yml` file, and may take a long time to
+generate if your project directory is large. When you know that more pipeline
+files have been made, you can update them by running
+
+    pnldash makepaths
+
+## Extra files
+
+One of the main goals of `pnldash` is to find large extraneous files that are not
+essential to your project.  This is accomplished by subtracting all your pipeline
+paths from all the large image files that are found.  To see these extra files,
+run
+
+    pnldash extra
+
+If you see some paths that should be part of your project, edit `pnldash.yml`
+and add them to your pipelines. `pnldash extra` should now no longer show them.
+
+## Workflow
+
+Typically, you'll write your `pnldash.yml` and run `pnldash status` and
+`pnldash extra` to see what extraneous files are detected and to get an overview
+of your pipeline outputs.  Usually you'll notice some files that should
+be part of your project, so you'll edit `pnldash.yml` to add those paths to one
+or more of your pipelines, and then run `pnldash extra` again.  Once you're satisfied
+that all of your project files are accounted for, you can begin to delete some of
+the extraneous files.  For example, to delete all the extraneous vtk files:
+
+    pnldash extra | grep -E '\.vtk$' | xargs rm
+
+After this you'll have to update the cached `.pnldash/all_image_files.txt` again
+by running `pnldash find`. Then `pnldash status` and `pnldash extra` will no
+longer include the extraneous files.
+
+So a typical workflow looks like this:
+
+    pnldash init
+    # edit pnldash.yml
+    pnldash status
+    pnldash extra
+    # delete some files, add some paths to pnldash.yml
+    pnldash find  # because you deleted some files
+    pnldash extra
+    # delete some files
+    pnldash find
+    pnldash extra
+    pnldash status
+
+When all looks good, you can submit your project to the central database:
+
+    pnldash push
+
+
+## The Central Database

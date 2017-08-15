@@ -6,8 +6,10 @@ import pandas as pd
 import logging
 log = logging.getLogger(__name__)
 
+# DEFAULT_EXTS = ['.nrrd', '.nii.gz', '.nii', '.vtk', '.nhdr', '.mgz', '.dcm',
+#                 '.dcm.gz', '.IMA', '.IMA.gz', '.bval', '.bvec', '.provenance']
 DEFAULT_EXTS = ['.nrrd', '.nii.gz', '.nii', '.vtk', '.nhdr', '.mgz', '.dcm',
-                '.dcm.gz', '.IMA', '.IMA.gz', '.bval', '.bvec', '.provenance']
+                '.dcm.gz', '.IMA', '.IMA.gz', '.bval', '.bvec']
 EXTS = getattr(config, 'FIND_EXTS', DEFAULT_EXTS)
 
 PROJECT_YML = local.path(config.PROJECT_YML)

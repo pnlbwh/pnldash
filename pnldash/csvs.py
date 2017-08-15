@@ -32,8 +32,9 @@ def get_nifti_assoc(nii):
     return [f for f in [bvec, bval] if f.exists()]
 
 
-ASSOC_FILES = {'.nii.gz': get_nifti_assoc,
-               '': get_provenance_file}
+# ASSOC_FILES = {'.nii.gz': get_nifti_assoc,
+#                '': get_provenance_file}
+ASSOC_FILES = {'.nii.gz': get_nifti_assoc }
 
 
 def concat(l):
@@ -107,7 +108,8 @@ def make_csvs():
                         if not paths:  # no glob
                             paths = [path]
                         for ext, getassoc in ASSOC_FILES.items():
-                            paths.extend(getassoc(path))
+                            if path.endswith(ext):
+                                paths.extend(getassoc(path))
                         for path in paths:
                             mtime = None
                             mtimeStr = None

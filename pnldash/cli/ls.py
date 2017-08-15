@@ -19,6 +19,7 @@ def _printVertical(d, prepend='', keys=None, fd=sys.stderr):
 
 
 class Ls(ParamApp):
+    """List pipeline file paths."""
 
     print_csv = cli.Flag(
         ['-c', '--csv'],

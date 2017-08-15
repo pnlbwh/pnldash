@@ -23,11 +23,11 @@ pipelines:
     - description: 'PNL standard pipeline with default parameters'
 
       parameters:
-        version_FreeSurfer: 5.3.0
-        hash_UKFTractography: 421a7ad
-        hash_tract_querier: e045eab
-        hash_BRAINSTools: 41353e8
-        hash_trainingDataT1AHCC: d6e5990
+        FreeSurfer_version: 5.3.0
+        UKFTractography_hash: 421a7ad
+        tract_querier_hash: e045eab
+        BRAINSTools_hash: 41353e8
+        trainingDataT1AHCC_hash: d6e5990
 
       paths:
         fs: _data/003_GNX_007/freesurfer/*/*

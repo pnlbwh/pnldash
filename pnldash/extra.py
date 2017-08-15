@@ -22,9 +22,11 @@ def _relativePath(p):
 
 def _compute_extra_table():
     paths_tbl = pd.read_csv(PATHS_CSV.__str__())
-    if paths_tbl.empty:
-        raise Exception("'{}' is empty".format(PATHS_CSV))
-    pipeline_paths = paths_tbl[paths_tbl.exists]['path']
+    if not paths_tbl.empty:
+        # raise Exception("'{}' is empty. Make sure".format(PATHS_CSV))
+        pipeline_paths = paths_tbl[paths_tbl.exists]['path']
+    else:
+        pipeline_paths = []
     with open(FIND_TXT, 'r') as f:
         found_paths = f.read().splitlines()
     extraFiles = list(set(found_paths) - set(pipeline_paths))
