@@ -135,10 +135,10 @@ this file by running
     pnldash find
 
 Similarly, `.pnldash/paths.csv` and `.pnldash/params.csv` are reused by `pnldash
-status` once they have been generated. These cache csvs record all the pipeline
+status` once they have been generated. These cached csvs record all the pipeline
 paths and parameters specified in your `pnldash.yml` file, and may take a while
 to generate if your project directory is large. When you know that more
-pipeline files have been made, you can update them by running
+pipeline files have been made, update them by running
 
     pnldash makepaths
 
@@ -152,15 +152,15 @@ run
     pnldash extra
 
 If you see some paths that should be part of your project, edit `pnldash.yml`
-and add them to your pipelines. `pnldash extra` should now no longer show them.
+and add them to your pipelines. `pnldash extra` should no longer show them.
 
 ## Typical Workflow
 
 Typically, you'll write `pnldash.yml` and then run `pnldash status` and
 `pnldash extra` to see what extraneous files are detected, and to get an overview
 of your pipeline outputs.  Usually you'll notice some files that should
-be part of your project, so you'll edit `pnldash.yml` to add those paths to one
-or more of your pipelines, and then run `pnldash extra` once again.  Once you're satisfied
+be part of your project, so you'll edit `pnldash.yml` and add those paths to one
+or more of your pipelines, and rerun `pnldash extra`.  Once you're satisfied
 that all of your project files are accounted for, you can begin to delete some of
 the extraneous files.  For example, to delete all the extraneous vtk files:
 
@@ -185,28 +185,80 @@ So, a typical workflow looks like this:
     pnldash extra
     pnldash status
 
-When all looks good, you can submit your project to the central database:
+Once you're satisfied, you can submit your project to the central database:
 
     pnldash push
 
 
 ## The Central Database
 
-The central database stores the information from every project that uses
+The central database stores the information from every project that has used
 `pnldash push`.  You can see a list of projects by running
 
     pnldash db list
 
-The main point of the database is to get a dashboard of all projects,
-summarizing their pipelines, parameters, and disk usage efficiency.
-To generate the dashboard, run
+The main point of the database is to get a dashboard summarizing every project's
+pipelines, parameters, and disk usage efficiency. To generate the dashboard, run
 
 
     pnldash db report
 
-This makes `pnldashboard.html` which you can open in a browser. Even
-easier is to generate the dashboard and open it with one command:
+This makes `pnldashboard.html` which you can open in a browser. To generate
+and open the dashboard in one command, run:
 
 
     pnldash db open # or,
     pnldash db open -r  # overwrites current pnldashboard.html if it exists
+
+
+## Listing Pipeline Files
+
+You can list your pipeline paths using the `ls` command, e.g.
+
+    pnldash ls dwi
+
+This lists the existing file paths for the `dwi` template path in all your
+pipelines.  To list results for a particular pipeline, use the `-p` flag:
+
+    pnldash ls dwi -p 2  # lists dwi paths for second pipeline in pnldash.yml
+
+  If you'd like to get a list of missing output, use the `-x` flag:
+
+    pnldash ls -x dwi
+
+For all output, existing and missing, use `-a`:
+
+    pnldash ls -a dwi
+
+Sometimes you just want the list of case ids for which a particular
+output exists (or is missing), or perhaps you want the case ids alongside
+their output paths.  You can do that as follows:
+
+    pnldash ls -s dwi # prints <caseid> for existing paths
+    pnldash ls -c dwi  # prints <caseid>,<path> for existing paths
+
+You can combine flags together. To get the csv of all missing `dwi` paths, you would run
+
+    pnldash ls -cx dwi
+
+The `ls` command helps you inspect your generated data or use it for other types of
+processing by piping its results to other commands. Say you want to get the
+space directions of all your raw DWI's, you could do the following:
+
+    pnldash ls dwi | unu head | grep 'space directions'
+
+NOTE: the `ls` interface is exactly the same as it
+for [pnlpipe](https://github.com/reckbo/pnlpipe).
+
+## Shell Environment
+
+You can export your template paths to the shell using `pnldash env`:
+
+    pnldash env
+
+prints a Bash setup that exports the pipeline paths. Add it to your
+environment as follows:
+
+
+    eval `pnldash env`  # or
+    eval $(pnldash env)
