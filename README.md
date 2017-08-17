@@ -4,6 +4,9 @@ your pipelines' disk usage, as well as list any large extraneous image files.
 Individual project information can be pushed to a central database, and an html
 dashboard can be generated for all your projects.
 
+
+![](doc/pnldash.jpg)
+
 <!-- markdown-toc start - Don't edit this section. Run M-x markdown-toc-generate-toc again -->
 **Table of Contents**
 
