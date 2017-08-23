@@ -28,12 +28,20 @@ Overview
 
 ```{r overview}
 #TODO handle empty project paths
-PATHS.byProject = PATHS[PATHS[,exists] & ! path %like% '\\.\\./.*', .('project files (G)'=sum(sizeMB)/1024),by=projectPath]
+
+PATHS.unique = PATHS[, head(.SD, 1), by=.(projectPath, path)]
+
+PATHS.byProject = PATHS.unique[PATHS.unique[,exists] & ! path %like% '\\.\\./.*', .('project files (G)'=sum(sizeMB)/1024),by=projectPath]
+
 EXTRA.byProject = EXTRA[,.('extra files (G)'=sum(sizeMB)/1024), by=projectPath]
+
 SPACE_TABLE.a = merge(PATHS.byProject, EXTRA.byProject, all.x=T, by="projectPath")
+
 SPACE_TABLE = merge(SPACE_TABLE.a, DU, by="projectPath")[,'total directory size (G)':=diskUsageG][,diskUsageG:=NULL]
+
 DT::datatable(SPACE_TABLE, options = list(bPaginate=F)) %>% DT::formatRound(c('project files (G)', 'extra files (G)', 'total directory size (G)'), 2)
 ```
+
 
 ```{r projectpages, include=FALSE}
 paths.grouped <- PATHS[,.( completed=sum(exists), missing=sum(not(exists)), total=.N, 'size (G)'=sum(sizeMB, na.rm=T)/1024, examplePath=head(path,n=1)), by=.(projectPath, pathKey, pipelineId)]
