@@ -26,26 +26,28 @@ class Status(cli.Application):
 
         print(_heading('Pipeline Files'))
         paths_table = pd.read_csv(PATHS_CSV)
-        agg = {
-            'exists': {'completed': 'sum',
-                       'missing': lambda x: (~x).sum(),
-                       'total': 'size'},
-            'sizeMB': {'size (G)': lambda x: x.sum()/1024}
-        }
-
-        # suppress pandas FutureWarning regarding nested dictionary aggregations until
-        # a replacement solution is found
-        import warnings
-        warnings.simplefilter(action='ignore', category=FutureWarning)
-
-        st = paths_table.groupby(['pipelineId', 'pathKey']).agg(agg)
-        st.columns = st.columns.droplevel(0)
-        st.reset_index()
+        st = paths_table.groupby(['pipelineId', 'pathKey']).apply(
+            lambda g: pd.Series({
+                    'completed': g.exists.sum(),
+                    'missing': (~g.exists).sum(),
+                    'total': g.exists.size,
+                    'size (G)': g.sizeMB.sum()/1024
+                })
+        ).reset_index()
         st['completed'] = st['completed'].astype(int)
-        print(st)
+        st['missing'] = st['missing'].astype(int)
+        st['total'] = st['total'].astype(int)
+        for pipelineId in st['pipelineId'].unique():
+            print('')
+            print("Pipeline #{}\n".format(pipelineId+1))
+            # df = st[st.pipelineId == pipelineId].drop('pipelineId',1)
+            df = st[st.pipelineId == pipelineId]
+            print(df.to_string(index=False))
+            pipelineDiskUsage = df['size (G)'].sum()
+            print("disk usage (G): {:.2f}".format(pipelineDiskUsage))
 
-        pipelineDiskUsage = paths_table['sizeMB'].sum() / 1024.0
-        print("disk usage (G): {:.2f}".format(pipelineDiskUsage))
+        pipelineDiskUsage = paths_table.drop_duplicates(subset='path')['sizeMB'].sum() / 1024.0
+        print("\nTotal disk usage (G): {:.2f}".format(pipelineDiskUsage))
 
         du_table = pd.read_csv(DU_CSV)
         totalDiskUsage = du_table['diskUsageG'].iloc[0]

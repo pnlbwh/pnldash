@@ -7,6 +7,7 @@ import os.path
 import glob
 import time
 from util import getsize
+import pandas as pd
 from .config import *
 from . import read_project_yml
 import logging
@@ -78,6 +79,8 @@ def make_csvs():
 
     CACHE_DIR.mkdir()
 
+    #TODO convert to pandas
+
     with open(paramsCsv, 'w') as fparamsCsv:
         csvwriterParams = csv.writer(fparamsCsv)
         csvwriterParams.writerow(PARAM_HDR)
@@ -124,5 +127,9 @@ def make_csvs():
                             csvwriterPaths.writerow(
                                 [projectPath, pipelineId, pathKey, caseid,
                                  local.path(path), sizeMB, mtime, mtimeStr, exists])
+
+        # paths_table = pd.read_csv(PATHS_CSV.__str__())
+        # paths_table.drop_duplicates()
+        # paths_table.to_csv(pathsCsv.__str__())
         log.info("Made '{}'".format(paramsCsv))
         log.info("Made '{}'".format(pathsCsv))
