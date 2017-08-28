@@ -4,7 +4,7 @@ import sys
 import pandas as pd
 import csv
 import os
-from util import getsize
+from .util import getsize
 from .config import *
 from .find import make_find
 from .csvs import make_csvs
@@ -30,10 +30,10 @@ def _compute_extra_table():
     with open(FIND_TXT, 'r') as f:
         found_paths = f.read().splitlines()
     extraFiles = list(set(found_paths) - set(pipeline_paths))
-    sizes = map(getsize, extraFiles)
+    sizes = [getsize(f) for f in extraFiles]
     df = pd.DataFrame({'projectPath': local.cwd,
                        'path': extraFiles,
-                       'sizeMB': sizes, })
+                       'sizeMB': sizes })
     return df
 
 

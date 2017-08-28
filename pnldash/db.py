@@ -2,8 +2,12 @@ import sys
 import os
 from plumbum import cli, local, FG, SshMachine
 from .config import PROJECTS_DB_ENV
-import urlparse
 from contextlib import contextmanager
+
+try:
+    from urllib.parse import urlparse
+except ImportError:
+    from urlparse import urlparse
 
 
 def _get_db_url(urlstr=None):
@@ -19,7 +23,7 @@ def _get_db_url(urlstr=None):
 @contextmanager
 def open_db(urlstr=None):
     urlstr = urlstr or _get_db_url(urlstr)
-    url = urlparse.urlparse(urlstr)
+    url = urlparse(urlstr)
     if url.scheme:
         machine = SshMachine(url.hostname, user=url.username, port=url.port)
     else:

@@ -9,7 +9,7 @@ log = logging.getLogger(__name__)
 # DEFAULT_EXTS = ['.nrrd', '.nii.gz', '.nii', '.vtk', '.nhdr', '.mgz', '.dcm',
 #                 '.dcm.gz', '.IMA', '.IMA.gz', '.bval', '.bvec', '.provenance']
 DEFAULT_EXTS = ['.nrrd', '.nii.gz', '.nii', '.vtk', '.nhdr', '.mgz', '.dcm',
-                '.dcm.gz', '.IMA', '.IMA.gz', '.bval', '.bvec']
+                '.gz', '.IMA', '.bval', '.bvec', '.raw', '.mat']
 EXTS = getattr(config, 'FIND_EXTS', DEFAULT_EXTS)
 
 PROJECT_YML = local.path(config.PROJECT_YML)

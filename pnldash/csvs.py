@@ -6,7 +6,7 @@ import yaml
 import os.path
 import glob
 import time
-from util import getsize
+from .util import getsize
 import pandas as pd
 from .config import *
 from . import read_project_yml
@@ -50,7 +50,7 @@ def readCaselistItem(s):
 
 
 def readCaselist(caselist):
-    if isinstance(caselist, unicode):
+    if isinstance(caselist, str):
         return readCaselistItem(caselist)
     elif isinstance(caselist, list):
         return concat(map(readCaselistItem, caselist))
@@ -96,7 +96,7 @@ def make_csvs():
                          pipeline['description'], param, paramVal])
                 caseids = readCaselist(pipeline['paths']['caselist'])
                 caseidString = pipeline['paths']['caseid_placeholder']
-                if not isinstance(caseidString, unicode):
+                if not isinstance(caseidString, str):
                     raise Exception(
                         "caseid field needs to be in quotes to protect its value: TODO force read yml fields as strings")
                 for pathKey, pathTemplate in pipeline['paths'].items():
@@ -110,9 +110,9 @@ def make_csvs():
                         paths = glob.glob(path)  # could be a glob pattern
                         if not paths:  # no glob
                             paths = [path]
-                        for ext, getassoc in ASSOC_FILES.items():
-                            if path.endswith(ext):
-                                paths.extend(getassoc(path))
+                        #for ext, getassoc in ASSOC_FILES.items():
+                        #    if path.endswith(ext):
+                        #        paths.extend(getassoc(path))
                         for path in paths:
                             mtime = None
                             mtimeStr = None
