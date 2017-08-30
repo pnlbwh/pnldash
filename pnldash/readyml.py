@@ -17,9 +17,10 @@ def read_project_yml():
     required_keys = ['name', 'description', 'pipelines']
 
     for required_key in required_keys:
-        if not yml.get(required_key, None):
-            raise Exception("'{}' missing required key: {}. Edit 'pnldash.yml' and add a value for this key.".format(
-                PROJECT_YML, required_key))
+        if yml.get(required_key, None) == None:
+            errmsg = "'{}' missing top level required key: {}. Edit 'pnldash.yml' and add a value for this key.".format(PROJECT_YML, required_key)
+            print(errmsg)
+            sys.exit(1)
 
     required_pipeline_keys = ['paths', 'parameters']
     required_path_keys = ['caselist', 'caseid_placeholder']

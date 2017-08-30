@@ -50,7 +50,7 @@ def readCaselistItem(s):
 
 
 def readCaselist(caselist):
-    if isinstance(caselist, str):
+    if isinstance(caselist, unicode):
         return readCaselistItem(caselist)
     elif isinstance(caselist, list):
         return concat(map(readCaselistItem, caselist))
@@ -96,7 +96,7 @@ def make_csvs():
                          pipeline['description'], param, paramVal])
                 caseids = readCaselist(pipeline['paths']['caselist'])
                 caseidString = pipeline['paths']['caseid_placeholder']
-                if not isinstance(caseidString, str):
+                if not isinstance(caseidString, unicode):
                     raise Exception(
                         "caseid field needs to be in quotes to protect its value: TODO force read yml fields as strings")
                 for pathKey, pathTemplate in pipeline['paths'].items():
