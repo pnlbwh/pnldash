@@ -51,4 +51,7 @@ def make_find(echo=False, useCache=True):
                 print(path)
     log.info("Found {} file(s) with extensions: {}".format(num, ', '.join(EXTS)))
     log.info("Made '{}".format(config.FIND_TXT))
+
+    log.info("Make '{}".format(config.DU_CSV))
     _make_du()
+    log.info("Made '{}".format(config.DU_CSV))
