@@ -114,11 +114,14 @@ def make_csvs():
                         #    if path.endswith(ext):
                         #        paths.extend(getassoc(path))
                         for path in paths:
+                            path = local.path(os.path.realpath(path))
+                            if not path.startswith(local.cwd):
+                                continue
                             mtime = None
                             mtimeStr = None
                             exists = False
                             sizeMB = None
-                            if os.path.exists(path):
+                            if path.exists():
                                 # mtime = os.path.getmtime(path)
                                 # mtimeStr = time.strftime('%Y-%m-%d %H:%M:%S',
                                 #                          time.localtime(mtime))
