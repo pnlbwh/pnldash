@@ -29,11 +29,11 @@ def read_project_yml():
 
         for required in required_pipeline_keys:
             if not pipeline.get(required, None):
-                log.error("Pipeline #{} is missing key '{}'. Edit pnldash.yml and add it.".format(paramid, required))
+                log.error("Pipeline #{} is missing key '{}'. Edit pnldash.yml and add it.".format(paramid+1, required))
                 sys.exit(1)
         for required in required_path_keys:
             if not pipeline['paths'].get(required,None):
-                log.error("Pipeline #{}: 'paths' dictionary is missing key '{}'. Edit pnldash.yml and add it.".format(paramid, required))
+                log.error("Pipeline #{}: 'paths' dictionary is missing key '{}'. Edit pnldash.yml and add it.".format(paramid+1, required))
                 sys.exit(1)
 
     return yml
